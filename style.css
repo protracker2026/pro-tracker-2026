@@ -5,17 +5,17 @@
     /* Deeper Orange */
     --primary-light: rgba(249, 115, 22, 0.08);
 
-    --bg-body: #050505;
-    /* Deep Black */
-    --bg-card: #111111;
-    /* Dark Carbon */
-    --bg-sidebar: #050505;
-    --border-color: #1f1f1f;
-    /* Subtle Dark Border */
+    --bg-body: #0d1117;
+    /* Deep Charcoal/Slate */
+    --bg-card: #161b22;
+    /* Lighter Card Background */
+    --bg-sidebar: #0d1117;
+    --border-color: #21262d;
+    /* Modern Slate Border */
 
-    --text-main: #f0f0f0;
+    --text-main: #f0f6fc;
     --text-check: #ffffff;
-    --text-muted: #737373;
+    --text-muted: #8b949e;
 
     --success: #10b981;
     --warning: #f97316;
@@ -130,7 +130,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    background: radial-gradient(circle at top right, #111 0%, #050505 50%);
+    background: radial-gradient(circle at top right, #161b22 0%, #0d1117 60%);
 }
 
 .top-bar {
@@ -140,8 +140,8 @@ body {
     justify-content: space-between;
     padding: 0 2rem;
     border-bottom: 1px solid var(--border-color);
-    background-color: rgba(5, 5, 5, 0.8);
-    backdrop-filter: blur(12px);
+    background-color: rgba(13, 17, 23, 0.82);
+    backdrop-filter: blur(15px);
     z-index: 10;
 }
 
@@ -493,6 +493,40 @@ body {
     }
 }
 
+.deadline-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    background: rgba(249, 115, 22, 0.1);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid rgba(249, 115, 22, 0.2);
+    width: fit-content;
+}
+
+.deadline-badge i {
+    font-size: 0.75rem;
+}
+
+.info-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    width: fit-content;
+    white-space: nowrap;
+}
+
+.info-badge i {
+    font-size: 0.75rem;
+}
+
 .card-steps {
     margin-top: 1.5rem;
 }
@@ -725,6 +759,84 @@ body {
 .checklist-date:hover {
     border-color: var(--primary-color);
     color: var(--text-main);
+}
+
+/* Item-specific Notes */
+.btn-item-note-toggle {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem 0.4rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-item-note-toggle:hover {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--primary-color);
+}
+
+.item-notes-list {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    border-left: 2px solid var(--border-color);
+    padding-left: 0.75rem;
+}
+
+.item-note {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    position: relative;
+    animation: fadeIn 0.3s;
+}
+
+.item-note-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.2rem;
+}
+
+.item-note-text {
+    font-size: 0.85rem;
+    color: var(--text-check);
+    line-height: 1.4;
+    white-space: pre-wrap;
+}
+
+.btn-delete-item-note {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    cursor: pointer;
+    opacity: 0.5;
+}
+
+.btn-delete-item-note:hover {
+    opacity: 1;
+    color: var(--danger);
+}
+
+.inp-item-note {
+    background-color: var(--bg-body);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--text-main);
+    font-family: inherit;
+}
+
+.inp-item-note:focus {
+    outline: none;
+    border-color: var(--primary-color);
 }
 
 .checklist-date-input {
@@ -1037,6 +1149,20 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+/* Make calendar icon visible in dark theme */
+input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(58%) sepia(82%) saturate(2225%) hue-rotate(345deg) brightness(101%) contrast(101%);
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 2px;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    background-color: rgba(249, 115, 22, 0.1);
 }
 
 .form-row {

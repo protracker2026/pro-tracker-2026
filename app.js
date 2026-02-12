@@ -311,8 +311,10 @@ class App {
         this.btnCompleteStep = document.getElementById('btn-complete-step');
         this.checklistItems = document.getElementById('checklist-items');
         this.inpChecklist = document.getElementById('new-checklist-input');
+        this.inpChecklistDeadline = document.getElementById('new-checklist-deadline');
         this.btnAddChecklist = document.getElementById('btn-add-checklist');
         this.inpNote = document.getElementById('note-input');
+        this.inpNoteDeadline = document.getElementById('note-deadline');
         this.btnAddNote = document.getElementById('btn-add-note');
         this.notesList = document.getElementById('notes-list');
 
@@ -654,7 +656,7 @@ class App {
                                 <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
                             </span>
                         </div>
-                    <span style="font-size:0.8rem; color:var(--text-muted);">${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
+                    <span style="font-size:0.8rem; color:var(--text-muted);">${new Date(p.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
                 </div>
                 <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
                     สถานะ: ${p.status === 'completed' ? 'เสร็จสิ้น' : `ขั้นตอนที่ ${p.currentStepIndex + 1}/${p.steps.length}`}
@@ -730,7 +732,7 @@ class App {
                                 <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
                             </span>
                         </div>
-                        <div class="card-date"><i class="fa-regular fa-clock"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH')}</div>
+                        <div class="card-date"><i class="fa-regular fa-clock"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
                          <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">
                             <i class="fa-solid fa-coins"></i> ${budgetFormatted}
                         </div>
@@ -763,8 +765,8 @@ class App {
         this.detailTitle.textContent = project.name;
         this.detailStatus.textContent = project.status === 'completed' ? 'เสร็จสิ้น' : 'กำลังดำเนินการ';
         this.detailDesc.textContent = project.description || 'ไม่มีรายละเอียด';
-        this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH');
-        this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-';
+        this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
         this.detailBudget.textContent = new Intl.NumberFormat('th-TH').format(project.budget);
 
         const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
@@ -848,20 +850,115 @@ class App {
         if (item.completedAt) {
             const dateObj = new Date(item.completedAt);
             dateDisplay = dateObj.toLocaleString('th-TH', {
-                day: '2-digit', month: '2-digit', year: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
         }
 
+        let deadlineDisplay = '';
+        if (item.deadline) {
+            const d = new Date(item.deadline);
+            deadlineDisplay = `<div class="deadline-badge" title="กำหนดเสร็จ (Deadline)"><i class="fa-solid fa-flag-checkered"></i> ${d.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
+        }
+
+        const createdAtStr = item.createdAt ? new Date(item.createdAt).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-';
+
+        // Render Item-specific Notes
+        const itemNotes = item.notes || [];
+        let itemNotesHtml = '';
+        if (itemNotes.length > 0) {
+            itemNotesHtml = `
+                <div class="item-notes-list">
+                    ${itemNotes.map((n, ni) => `
+                        <div class="item-note">
+                            <div class="item-note-header">
+                                <span class="info-badge" style="background:none; padding:0; font-size:0.65rem;">
+                                    <i class="fa-regular fa-clock"></i> ${new Date(n.timestamp).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                                <button class="btn-delete-item-note" data-index="${ni}" title="ลบบันทึก"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <div class="item-note-text">${n.text}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
         li.innerHTML = `
             <input type="checkbox" ${item.checked ? 'checked' : ''}>
-            <span class="checklist-text">${item.text}</span>
-            <div class="checklist-date" title="คลิกเพื่อแก้ไขวันที่">${dateDisplay || (item.checked ? 'ระบุวันที่' : '')}</div>
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 0.25rem;">
+                <span class="checklist-text">${item.text}</span>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                    <div class="info-badge" title="วันที่เริ่มเพิ่มรายการ">
+                        <i class="fa-regular fa-calendar-plus"></i> ${createdAtStr}
+                    </div>
+                    ${deadlineDisplay}
+                    <button class="btn-item-note-toggle" title="เพิ่มบันทึกในรายการนี้"><i class="fa-solid fa-note-sticky"></i> บันทึก</button>
+                </div>
+                ${itemNotesHtml}
+                <div class="add-item-note-box" style="display:none; margin-top: 0.5rem;">
+                    <div style="display:flex; gap: 0.25rem;">
+                        <input type="text" class="inp-item-note" placeholder="พิมพ์บันทึก..." style="flex:1; font-size:0.85rem; padding: 0.3rem 0.6rem;">
+                        <button class="btn-save-item-note btn-primary" style="padding: 0.2rem 0.5rem;"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+            <div class="checklist-date" title="วันที่เสร็จสิ้น">${dateDisplay || (item.checked ? 'ระบุวันที่' : '')}</div>
             <button class="btn-delete-item"><i class="fa-solid fa-times"></i></button>
         `;
 
         const checkbox = li.querySelector('input');
         const dateEl = li.querySelector('.checklist-date');
+        const noteToggleBtn = li.querySelector('.btn-item-note-toggle');
+        const addNoteBox = li.querySelector('.add-item-note-box');
+        const saveNoteBtn = li.querySelector('.btn-save-item-note');
+        const inpItemNote = li.querySelector('.inp-item-note');
+
+        // Note Toggle
+        noteToggleBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = addNoteBox.style.display === 'block';
+            addNoteBox.style.display = isVisible ? 'none' : 'block';
+            if (!isVisible) inpItemNote.focus();
+        });
+
+        // Save Item Note
+        const saveItemNote = async () => {
+            const val = inpItemNote.value.trim();
+            if (!val) return;
+            if (!item.notes) item.notes = [];
+            item.notes.push({
+                text: val,
+                timestamp: new Date().toISOString()
+            });
+            await FirestoreManager.updateProject(this.activeProject);
+            this.loadWorkflowStep(this.activeWorkflowStepIndex);
+        };
+
+        saveNoteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            saveItemNote();
+        });
+
+        inpItemNote.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.stopPropagation();
+                saveItemNote();
+            }
+        });
+
+        // Delete Item Note
+        li.querySelectorAll('.btn-delete-item-note').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const ni = parseInt(btn.dataset.index);
+                if (confirm('ลบบันทึกนี้?')) {
+                    item.notes.splice(ni, 1);
+                    await FirestoreManager.updateProject(this.activeProject);
+                    this.loadWorkflowStep(this.activeWorkflowStepIndex);
+                }
+            });
+        });
 
         checkbox.addEventListener('change', async () => {
             item.checked = checkbox.checked;
@@ -922,14 +1019,22 @@ class App {
 
     async addChecklistItem() {
         const text = this.inpChecklist.value.trim();
+        const deadline = this.inpChecklistDeadline.value;
         if (!text) return;
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
-        currentStep.checklist.push({ text: text, checked: false, completedAt: null });
+        currentStep.checklist.push({
+            text: text,
+            checked: false,
+            createdAt: new Date().toISOString(),
+            completedAt: null,
+            deadline: deadline || null
+        });
 
         await FirestoreManager.updateProject(this.activeProject);
 
         this.inpChecklist.value = '';
+        // Keep deadline value for efficiency
         this.loadWorkflowStep(this.activeWorkflowStepIndex);
     }
 
@@ -1272,15 +1377,22 @@ class App {
             div.className = 'note-item';
 
             const dateStr = new Date(note.timestamp).toLocaleString('th-TH', {
-                day: '2-digit', month: '2-digit', year: '2-digit',
+                day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
             });
 
+            let deadlineHtml = '';
+            if (note.deadline) {
+                const dn = new Date(note.deadline);
+                deadlineHtml = `<div class="deadline-badge" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-flag-checkered"></i> กำหนดเป้าหมาย: ${dn.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
+            }
+
             div.innerHTML = `
                 <div class="note-timestamp">
-                    <span><i class="fa-regular fa-clock"></i> ${dateStr}</span>
+                    <span class="info-badge" style="background:none; padding:0;"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
                     <button class="btn-delete-note" title="ลบบันทึก"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
+                ${deadlineHtml}
                 <div class="note-content">${note.text}</div>
             `;
 
@@ -1316,12 +1428,14 @@ class App {
 
         currentStep.notes.unshift({
             timestamp: new Date().toISOString(),
-            text: text
+            text: text,
+            deadline: this.inpNoteDeadline.value || null
         });
 
         await FirestoreManager.updateProject(this.activeProject);
 
         this.inpNote.value = '';
+        // Keep deadline value for efficiency
         this.renderNotesList();
         this.showToast('บันทึกเรียบร้อยแล้ว', 'success');
     }

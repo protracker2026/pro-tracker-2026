@@ -425,6 +425,7 @@ class App {
                         const updatedProject = projects.find(p => p.id === this.activeProject.id);
                         if (updatedProject) {
                             this.activeProject = updatedProject;
+                            this.openProjectDetail(this.activeProject.id); // Refresh detail view UI
                         }
                     }
                 }
@@ -905,12 +906,26 @@ class App {
                     // Update local state
                     this.stepsTemplate = JSON.parse(JSON.stringify(this.tempStepsTemplate));
 
-                    // Save to Firestore
-                    await FirestoreManager.updateWorkspaceSettings(code, {
-                        customSteps: this.stepsTemplate
+                    // Fetch current projects to sync titles
+                    const workspace = await FirestoreManager.getWorkspaceData();
+                    const projects = workspace.projects || [];
+
+                    // Propagate title changes to projects with the same step count
+                    projects.forEach(p => {
+                        if (p.steps && p.steps.length === this.stepsTemplate.length) {
+                            p.steps.forEach((s, idx) => {
+                                s.title = this.stepsTemplate[idx].title;
+                            });
+                        }
                     });
 
-                    this.showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
+                    // Save to Firestore (Update both customSteps and projects)
+                    await FirestoreManager.updateWorkspaceSettings(code, {
+                        customSteps: this.stepsTemplate,
+                        projects: projects
+                    });
+
+                    this.showToast('บันทึกการตั้งค่าและอัปเดตโครงการทั้งหมดแล้ว', 'success');
                     this.modalSettings.classList.remove('open');
                 } catch (error) {
                     console.error(error);

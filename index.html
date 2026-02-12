@@ -35,6 +35,10 @@
                     <i class="fa-solid fa-list-check"></i>
                     <span>โครงการทั้งหมด</span>
                 </a>
+                <a href="#" class="nav-item" id="nav-settings">
+                    <i class="fa-solid fa-cog"></i>
+                    <span>ตั้งค่าขั้นตอน (Settings)</span>
+                </a>
             </nav>
 
             <div class="sidebar-footer">
@@ -258,7 +262,53 @@
         </div>
     </div>
 
-    <div id="toast-container"></div>
+    <!-- Settings Modal -->
+    <div id="modal-settings" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>ตั้งค่าขั้นตอน (Workflow Steps)</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted" style="margin-bottom: 1rem;">แก้ไขขั้นตอนสำหรับโครงการใหม่
+                    (ไม่กระทบโครงการที่มีอยู่แล้ว)</p>
+                <div id="settings-steps-container" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
+                    <!-- Steps will be injected here -->
+                </div>
+                <div class="form-actions"
+                    style="border-top: 1px solid var(--border-color); padding-top: 1rem; margin-top: 1rem;">
+                    <button type="button" class="btn btn-outline" id="btn-reset-steps">คืนค่าเริ่มต้น</button>
+                    <button type="button" class="btn btn-primary" id="btn-save-settings">บันทึก</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Step Modal (Sub-modal) -->
+    <div id="modal-edit-step" class="modal" style="z-index: 1100;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>แก้ไขขั้นตอน</h3>
+                <span class="close-modal-step">&times;</span>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="edit-step-id">
+                <div class="form-group">
+                    <label>ชื่อขั้นตอน</label>
+                    <input type="text" id="edit-step-title">
+                </div>
+                <div class="form-group">
+                    <label>Checklist เริ่มต้น (คั่นด้วยบรรทัดใหม่)</label>
+                    <textarea id="edit-step-checklist" rows="5"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-text close-modal-step">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-step-edit">ตกลง</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="module" src="app.js"></script>
 </body>
 

@@ -972,12 +972,13 @@ body {
         padding: 0;
         font-size: 1.25rem;
     }
-    
-    #btn-create-project span, 
-    #btn-create-project i + span { /* Hide text, keep icon */
-        display: none; 
+
+    #btn-create-project span,
+    #btn-create-project i+span {
+        /* Hide text, keep icon */
+        display: none;
     }
-    
+
     /* Ensure icon is centered and visible */
     #btn-create-project i {
         margin: 0;
@@ -992,7 +993,29 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .form-row {
-        flex-direction: column;
+    /* Settings Modal Steps */
+    .step-setting-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem;
+        background: var(--bg-card);
+        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .step-setting-info {
+        font-weight: 500;
+    }
+
+    .step-setting-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    #nav-settings {
+        margin-top: auto;
+        /* Push to bottom if flex-direction is column */
     }
 }

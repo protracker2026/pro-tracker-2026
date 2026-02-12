@@ -84,7 +84,7 @@ const STEPS_TEMPLATE = [
 ];
 
 class Project {
-    constructor(name, description, budget, deadline) {
+    constructor(name, description, budget, deadline, template = STEPS_TEMPLATE) {
         this.id = Date.now().toString(); // Simple ID generation
         this.name = name;
         this.description = description;
@@ -94,14 +94,14 @@ class Project {
         this.status = 'active'; // active, completed
         this.currentStepIndex = 0; // 0-based index (0 = Step 1)
 
-        // Initialize steps with checklists
-        this.steps = STEPS_TEMPLATE.map(t => ({
-            id: t.id,
+        // Initialize steps with checklists from template
+        this.steps = template.map((t, index) => ({
+            id: t.id || index + 1,
             title: t.title,
             completed: false,
             completedAt: null,
             notes: "",
-            checklist: t.defaultChecklist.map(text => ({
+            checklist: (t.defaultChecklist || []).map(text => ({
                 text: text,
                 checked: false
             }))
@@ -216,6 +216,16 @@ class FirestoreManager {
         const projects = await this.getProjects();
         return projects.find(p => p.id === id);
     }
+
+    static async updateWorkspaceSettings(code, settings) {
+        try {
+            const docRef = doc(db, 'workspaces', code);
+            await setDoc(docRef, settings, { merge: true });
+        } catch (error) {
+            console.error("Error updating settings:", error);
+            throw error;
+        }
+    }
 }
 
 // --- UI Logic ---
@@ -224,9 +234,11 @@ class App {
     constructor() {
         this.currentView = 'dashboard';
         this.activeProject = null;
+        this.stepsTemplate = JSON.parse(JSON.stringify(STEPS_TEMPLATE)); // Default
 
         this.initElements();
         this.initEventListeners();
+        this.initSettings(); // New
         this.renderCurrentDate();
 
         this.initAccessCodeSystem();
@@ -294,6 +306,8 @@ class App {
             item.addEventListener('click', (e) => {
                 e.preventDefault();
                 const viewTarget = item.dataset.view;
+                if (!viewTarget) return; // Ignore if no view target (like Settings)
+
                 this.loadView(viewTarget);
                 this.navItems.forEach(nav => nav.classList.remove('active'));
                 item.classList.add('active');
@@ -395,12 +409,19 @@ class App {
 
         if (code) {
             this.modalAccessCode.classList.remove('open');
-            onSnapshot(doc(db, 'workspaces', code), (doc) => {
-                if (doc.exists()) {
+            onSnapshot(doc(db, 'workspaces', code), (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+
+                    // Load custom steps template if exists
+                    if (data.customSteps) {
+                        this.stepsTemplate = data.customSteps;
+                    }
+
                     if (this.currentView === 'dashboard') this.renderDashboard();
                     if (this.currentView === 'projects') this.renderProjectsList();
                     if (this.currentView === 'detail' && this.activeProject) {
-                        const projects = doc.data().projects || [];
+                        const projects = data.projects || [];
                         const updatedProject = projects.find(p => p.id === this.activeProject.id);
                         if (updatedProject) {
                             this.activeProject = updatedProject;
@@ -497,7 +518,7 @@ class App {
 
         const deadline = document.getElementById('inp-project-deadline').value;
 
-        const newProject = new Project(name, desc, budget, deadline);
+        const newProject = new Project(name, desc, budget, deadline, this.stepsTemplate);
         await FirestoreManager.addProject(newProject);
 
         this.modalCreate.classList.remove('open');
@@ -554,7 +575,7 @@ class App {
                     <span style="font-size:0.8rem; color:var(--text-muted);">${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
                 </div>
                 <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
-                    สถานะ: ${p.status === 'completed' ? 'เสร็จสิ้น' : `ขั้นตอนที่ ${p.currentStepIndex + 1}/${STEPS_TEMPLATE.length}`}
+                    สถานะ: ${p.status === 'completed' ? 'เสร็จสิ้น' : `ขั้นตอนที่ ${p.currentStepIndex + 1}/${p.steps.length}`}
                 </div>
             `;
 
@@ -602,7 +623,7 @@ class App {
             card.className = 'project-card';
 
             const budgetFormatted = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(p.budget);
-            const progress = Math.round(((p.currentStepIndex) / STEPS_TEMPLATE.length) * 100);
+            const progress = Math.round(((p.currentStepIndex) / p.steps.length) * 100);
 
             let statusClass = 'status-active';
             let statusText = 'กำลังดำเนินการ';
@@ -657,7 +678,7 @@ class App {
         this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-';
         this.detailBudget.textContent = new Intl.NumberFormat('th-TH').format(project.budget);
 
-        const percent = Math.round(((project.currentStepIndex) / STEPS_TEMPLATE.length) * 100);
+        const percent = Math.round(((project.currentStepIndex) / project.steps.length) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
         this.detailProgressPercent.textContent = `${percent}%`;
 
@@ -767,7 +788,7 @@ class App {
         if (step.completed) {
             step.completedAt = new Date().toISOString();
             // If this was the current step, move pointer forward
-            if (stepIndex === this.activeProject.currentStepIndex && stepIndex < STEPS_TEMPLATE.length - 1) {
+            if (stepIndex === this.activeProject.currentStepIndex && stepIndex < this.activeProject.steps.length - 1) {
                 this.activeProject.currentStepIndex = stepIndex + 1;
             }
             // Check if all steps done
@@ -792,7 +813,7 @@ class App {
         this.renderWorkflowTabs();
 
         // specific: update progress bar in detail view
-        const percent = Math.round(((this.activeProject.currentStepIndex) / STEPS_TEMPLATE.length) * 100);
+        const percent = Math.round(((this.activeProject.currentStepIndex) / this.activeProject.steps.length) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
         this.detailProgressPercent.textContent = `${percent}%`;
     }
@@ -813,6 +834,162 @@ class App {
             toast.style.animation = 'fadeOut 0.3s forwards';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
+    }
+    initSettings() {
+        this.navSettings = document.getElementById('nav-settings');
+        this.modalSettings = document.getElementById('modal-settings');
+        this.settingsStepsContainer = document.getElementById('settings-steps-container');
+        this.btnResetSteps = document.getElementById('btn-reset-steps');
+        this.btnSaveSettings = document.getElementById('btn-save-settings');
+
+        // Edit Step Modal Elements
+        // Since we injected HTML dynamically, these might be null if not in DOM?
+        // Wait, I put them in index.html. They should be there.
+        const modalEditStep = document.getElementById('modal-edit-step');
+        if (!modalEditStep) {
+            console.error("Modal Edit Step not found!");
+            return;
+        }
+
+        this.modalEditStep = modalEditStep;
+        this.inpEditStepTitle = document.getElementById('edit-step-title');
+        this.inpEditStepChecklist = document.getElementById('edit-step-checklist');
+        this.inpEditStepId = document.getElementById('edit-step-id');
+        this.btnConfirmStepEdit = document.getElementById('btn-confirm-step-edit');
+
+        // Nav Click
+        if (this.navSettings) {
+            this.navSettings.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openSettingsModal();
+            });
+        }
+
+        // Close Modals
+        if (this.modalSettings) {
+            this.modalSettings.querySelector('.close-modal').addEventListener('click', () => {
+                this.modalSettings.classList.remove('open');
+            });
+        }
+
+        if (this.modalEditStep) {
+            const closeBtn = this.modalEditStep.querySelector('.close-modal-step');
+            if (closeBtn) closeBtn.addEventListener('click', () => {
+                this.modalEditStep.classList.remove('open');
+            });
+            const cancelBtn = this.modalEditStep.querySelector('.btn-text');
+            if (cancelBtn) cancelBtn.addEventListener('click', () => {
+                this.modalEditStep.classList.remove('open');
+            });
+        }
+
+        // Reset
+        if (this.btnResetSteps) {
+            this.btnResetSteps.addEventListener('click', () => {
+                if (confirm('คุณแน่ใจหรือไม่ที่จะคืนค่าเริ่มต้น? การแก้ไขทั้งหมดจะหายไป')) {
+                    this.tempStepsTemplate = JSON.parse(JSON.stringify(STEPS_TEMPLATE));
+                    this.renderSettingsSteps();
+                }
+            });
+        }
+
+        // Save
+        if (this.btnSaveSettings) {
+            this.btnSaveSettings.addEventListener('click', async () => {
+                const code = sessionStorage.getItem('accessCode');
+                if (!code) return;
+                try {
+                    // Update local state
+                    this.stepsTemplate = JSON.parse(JSON.stringify(this.tempStepsTemplate));
+
+                    // Save to Firestore
+                    await FirestoreManager.updateWorkspaceSettings(code, {
+                        customSteps: this.stepsTemplate
+                    });
+
+                    this.showToast('บันทึกการตั้งค่าเรียบร้อยแล้ว', 'success');
+                    this.modalSettings.classList.remove('open');
+                } catch (error) {
+                    console.error(error);
+                    this.showToast('บันทึกไม่สำเร็จ: ' + error.message, 'error');
+                }
+            });
+        }
+
+        // Confirm Edit Step
+        if (this.btnConfirmStepEdit) {
+            this.btnConfirmStepEdit.addEventListener('click', () => {
+                this.saveStepEdit();
+            });
+        }
+    }
+
+    openSettingsModal() {
+        // Clone current template to temp for editing
+        this.tempStepsTemplate = JSON.parse(JSON.stringify(this.stepsTemplate));
+        this.renderSettingsSteps();
+        if (this.modalSettings) this.modalSettings.classList.add('open');
+    }
+
+    renderSettingsSteps() {
+        if (!this.settingsStepsContainer) return;
+        this.settingsStepsContainer.innerHTML = '';
+
+        if (!this.tempStepsTemplate) this.tempStepsTemplate = [];
+
+        this.tempStepsTemplate.forEach((step, index) => {
+            const div = document.createElement('div');
+            div.className = 'step-setting-item';
+            div.innerHTML = `
+                <div class="step-setting-info">
+                    Step ${index + 1}: ${step.title}
+                    <div style="font-size:0.8rem; color:var(--text-muted); font-weight:normal;">
+                        ${step.defaultChecklist ? step.defaultChecklist.length : 0} รายการตรวจสอบ
+                    </div>
+                </div>
+                <div class="step-setting-actions">
+                    <button class="btn-icon btn-edit-step" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
+                </div>
+            `;
+
+            const editBtn = div.querySelector('.btn-edit-step');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => {
+                    this.openEditStepModal(index);
+                });
+            }
+
+            this.settingsStepsContainer.appendChild(div);
+        });
+    }
+
+    openEditStepModal(index) {
+        const step = this.tempStepsTemplate[index];
+        if (this.inpEditStepId) this.inpEditStepId.value = index;
+        if (this.inpEditStepTitle) this.inpEditStepTitle.value = step.title;
+        if (this.inpEditStepChecklist) this.inpEditStepChecklist.value = (step.defaultChecklist || []).join('\n');
+
+        if (this.modalEditStep) this.modalEditStep.classList.add('open');
+    }
+
+    saveStepEdit() {
+        const index = parseInt(this.inpEditStepId.value);
+        const newTitle = this.inpEditStepTitle.value.trim();
+        const checklistStr = this.inpEditStepChecklist.value;
+        const newChecklist = checklistStr.split('\n').map(s => s.trim()).filter(s => s);
+
+        if (!newTitle) {
+            alert('กรุณาระบุชื่อขั้นตอน');
+            return;
+        }
+
+        if (this.tempStepsTemplate[index]) {
+            this.tempStepsTemplate[index].title = newTitle;
+            this.tempStepsTemplate[index].defaultChecklist = newChecklist;
+        }
+
+        this.renderSettingsSteps();
+        if (this.modalEditStep) this.modalEditStep.classList.remove('open');
     }
 }
 

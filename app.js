@@ -752,24 +752,78 @@ class App {
         const li = document.createElement('li');
         li.className = `checklist-item ${item.checked ? 'checked' : ''}`;
 
+        // Format date for display
+        let dateDisplay = '';
+        if (item.completedAt) {
+            const dateObj = new Date(item.completedAt);
+            dateDisplay = dateObj.toLocaleString('th-TH', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+        }
+
         li.innerHTML = `
             <input type="checkbox" ${item.checked ? 'checked' : ''}>
             <span class="checklist-text">${item.text}</span>
+            <div class="checklist-date" title="คลิกเพื่อแก้ไขวันที่">${dateDisplay || (item.checked ? 'ระบุวันที่' : '')}</div>
             <button class="btn-delete-item"><i class="fa-solid fa-times"></i></button>
         `;
 
         const checkbox = li.querySelector('input');
+        const dateEl = li.querySelector('.checklist-date');
+
         checkbox.addEventListener('change', async () => {
             item.checked = checkbox.checked;
+            if (item.checked && !item.completedAt) {
+                // Auto set today if not set
+                item.completedAt = new Date().toISOString();
+            } else if (!item.checked) {
+                // Clear date if unchecked (optional, but keep it clean)
+                item.completedAt = null;
+            }
+
             li.classList.toggle('checked', item.checked);
             await FirestoreManager.updateProject(this.activeProject);
+            this.loadWorkflowStep(this.activeWorkflowStepIndex); // Re-render to show date
+        });
+
+        // Manual date edit
+        dateEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const currentVal = item.completedAt ? new Date(item.completedAt).toISOString().slice(0, 16) : '';
+
+            const inp = document.createElement('input');
+            inp.type = 'datetime-local';
+            inp.className = 'checklist-date-input';
+            inp.value = currentVal;
+
+            dateEl.replaceWith(inp);
+            inp.focus();
+
+            const saveDate = async () => {
+                if (inp.value) {
+                    item.completedAt = new Date(inp.value).toISOString();
+                    // If date is set manually, maybe item should be checked?
+                    // Let's leave checkbox as is, but usually a date implies checked.
+                } else {
+                    item.completedAt = null;
+                }
+                await FirestoreManager.updateProject(this.activeProject);
+                this.loadWorkflowStep(this.activeWorkflowStepIndex);
+            };
+
+            inp.addEventListener('blur', saveDate);
+            inp.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') saveDate();
+            });
         });
 
         const deleteBtn = li.querySelector('.btn-delete-item');
-        deleteBtn.addEventListener('click', async () => {
+        deleteBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
             this.activeProject.steps[this.activeWorkflowStepIndex].checklist.splice(index, 1);
             await FirestoreManager.updateProject(this.activeProject);
-            this.loadWorkflowStep(this.activeWorkflowStepIndex); // Re-render
+            this.loadWorkflowStep(this.activeWorkflowStepIndex);
         });
 
         this.checklistItems.appendChild(li);
@@ -780,7 +834,7 @@ class App {
         if (!text) return;
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
-        currentStep.checklist.push({ text: text, checked: false });
+        currentStep.checklist.push({ text: text, checked: false, completedAt: null });
 
         await FirestoreManager.updateProject(this.activeProject);
 
@@ -1122,9 +1176,10 @@ class App {
 
         let stepsHtml = '';
         project.steps.forEach((step, idx) => {
-            const checklistItems = step.checklist.map(item =>
-                `<li>${item.checked ? '[✓]' : '[ ]'} ${item.text}</li>`
-            ).join('');
+            const checklistItems = step.checklist.map(item => {
+                const dateStr = item.completedAt ? ` <span style="font-size: 0.8rem; color: #64748b;">(${new Date(item.completedAt).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' })})</span>` : '';
+                return `<li>${item.checked ? '[✓]' : '[ ]'} ${item.text}${dateStr}</li>`;
+            }).join('');
 
             stepsHtml += `
                 <div class="pdf-step">

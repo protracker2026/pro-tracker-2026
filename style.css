@@ -599,6 +599,33 @@ body {
     color: var(--text-check);
 }
 
+.checklist-date {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    background: var(--bg-body);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    align-self: center;
+}
+
+.checklist-date:hover {
+    border-color: var(--primary-color);
+    color: var(--text-main);
+}
+
+.checklist-date-input {
+    background: var(--bg-body);
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.75rem;
+    padding: 0.1rem 0.3rem;
+    width: 130px;
+}
+
 .checklist-item.checked .checklist-text {
     text-decoration: line-through;
     color: var(--text-muted);

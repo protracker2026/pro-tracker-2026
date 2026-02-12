@@ -83,13 +83,22 @@ const STEPS_TEMPLATE = [
     }
 ];
 
+const PRIORITY_LABELS = {
+    'normal': { label: 'ปกติ', class: 'priority-normal', icon: 'fa-solid fa-circle-check' },
+    'urgent': { label: 'ด่วน', class: 'priority-urgent', icon: 'fa-solid fa-bolt' },
+    'very-urgent': { label: 'ด่วนมาก', class: 'priority-very-urgent', icon: 'fa-solid fa-angles-up' },
+    'most-urgent': { label: 'ด่วนที่สุด', class: 'priority-most-urgent', icon: 'fa-solid fa-fire' },
+    'extreme': { label: 'ด่วนชิบหาย', class: 'priority-extreme', icon: 'fa-solid fa-skull-crossbones' }
+};
+
 class Project {
-    constructor(name, description, budget, deadline, template = STEPS_TEMPLATE) {
+    constructor(name, description, budget, deadline, priority = 'normal', template = STEPS_TEMPLATE) {
         this.id = Date.now().toString(); // Simple ID generation
         this.name = name;
         this.description = description;
         this.budget = parseFloat(budget) || 0;
         this.deadline = deadline || null;
+        this.priority = priority;
         this.createdAt = new Date().toISOString();
         this.status = 'active'; // active, completed
         this.currentStepIndex = 0; // 0-based index (0 = Step 1)
@@ -100,11 +109,11 @@ class Project {
             title: t.title,
             completed: false,
             completedAt: null,
-            completedAt: null,
             notes: [],
             checklist: (t.defaultChecklist || []).map(text => ({
                 text: text,
-                checked: false
+                checked: false,
+                completedAt: null
             }))
         }));
     }
@@ -253,7 +262,24 @@ class App {
         this.modalCreate = document.getElementById('modal-create');
         this.btnCreateProject = document.getElementById('btn-create-project');
         this.btnCloseModal = document.querySelectorAll('.close-modal');
-        this.formCreate = document.getElementById('form-create-project');
+        this.btnAddProject = document.getElementById('btn-add-project');
+        this.formCreateProject = document.getElementById('form-create-project');
+        this.inpProjectName = document.getElementById('inp-project-name');
+        this.inpProjectDesc = document.getElementById('inp-project-desc');
+        this.inpProjectBudget = document.getElementById('inp-project-budget');
+        this.inpProjectDeadline = document.getElementById('inp-project-deadline');
+        this.inpProjectPriority = document.getElementById('inp-project-priority');
+
+        // Edit Project Info Modal Elements
+        this.modalEditProject = document.getElementById('modal-edit-project');
+        this.formEditProject = document.getElementById('form-edit-project');
+        this.btnEditProjectInfo = document.getElementById('btn-edit-project-info');
+        this.editProjectId = document.getElementById('edit-project-id');
+        this.editProjectName = document.getElementById('edit-project-name');
+        this.editProjectDesc = document.getElementById('edit-project-desc');
+        this.editProjectBudget = document.getElementById('edit-project-budget');
+        this.editProjectPriority = document.getElementById('edit-project-priority');
+        this.editProjectDeadline = document.getElementById('edit-project-deadline');
 
         // Access Code Modal
         this.modalAccessCode = document.getElementById('modal-access-code');
@@ -275,6 +301,7 @@ class App {
         this.detailStartDate = document.getElementById('detail-start-date');
         this.detailDeadline = document.getElementById('detail-deadline');
         this.detailBudget = document.getElementById('detail-budget');
+        this.detailPriority = document.getElementById('detail-priority'); // Add this to HTML later or use a span
         this.detailOverallProgress = document.getElementById('detail-overall-progress');
         this.detailProgressPercent = document.getElementById('detail-progress-percent');
 
@@ -344,7 +371,7 @@ class App {
             }
         });
 
-        this.formCreate.addEventListener('submit', (e) => {
+        this.formCreateProject.addEventListener('submit', (e) => {
             e.preventDefault();
             this.handleCreateProject();
         });
@@ -391,6 +418,42 @@ class App {
 
         if (this.btnExportPdf) {
             this.btnExportPdf.addEventListener('click', () => this.exportToPDF());
+        }
+
+        if (this.btnEditProjectInfo) {
+            this.btnEditProjectInfo.addEventListener('click', () => {
+                if (!this.activeProject) return;
+                const p = this.activeProject;
+                this.editProjectId.value = p.id;
+                this.editProjectName.value = p.name;
+                this.editProjectDesc.value = p.description || '';
+                this.editProjectBudget.value = p.budget || '';
+                this.editProjectPriority.value = p.priority || 'normal';
+                this.editProjectDeadline.value = p.deadline || '';
+                this.modalEditProject.classList.add('open');
+            });
+        }
+
+        if (this.formEditProject) {
+            this.formEditProject.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                if (!this.activeProject) return;
+
+                const updatedData = {
+                    ...this.activeProject,
+                    name: this.editProjectName.value.trim(),
+                    description: this.editProjectDesc.value.trim(),
+                    budget: parseFloat(this.editProjectBudget.value) || 0,
+                    priority: this.editProjectPriority.value,
+                    deadline: this.editProjectDeadline.value
+                };
+
+                await FirestoreManager.updateProject(updatedData);
+                this.activeProject = updatedData;
+                this.modalEditProject.classList.remove('open');
+                this.openProjectDetail(updatedData.id); // Refresh detail view
+                this.showToast('แก้ไขข้อมูลโครงการเรียบร้อยแล้ว', 'success');
+            });
         }
 
         this.btnAddChecklist.addEventListener('click', () => this.addChecklistItem());
@@ -521,20 +584,21 @@ class App {
     }
 
     async handleCreateProject() {
-        const name = document.getElementById('inp-project-name').value;
-        const desc = document.getElementById('inp-project-desc').value;
+        const name = this.inpProjectName.value.trim();
+        const desc = this.inpProjectDesc.value.trim();
+        const priority = this.inpProjectPriority ? this.inpProjectPriority.value : 'normal';
 
-        let budgetRaw = document.getElementById('inp-project-budget').value;
+        let budgetRaw = this.inpProjectBudget.value;
         budgetRaw = budgetRaw.replace(/,/g, '');
-        const budget = parseFloat(budgetRaw);
+        const budget = parseFloat(budgetRaw) || 0;
 
-        const deadline = document.getElementById('inp-project-deadline').value;
+        const deadline = this.inpProjectDeadline.value;
 
-        const newProject = new Project(name, desc, budget, deadline, this.stepsTemplate);
+        const newProject = new Project(name, desc, budget, deadline, priority, this.stepsTemplate);
         await FirestoreManager.addProject(newProject);
 
         this.modalCreate.classList.remove('open');
-        this.formCreate.reset();
+        this.formCreateProject.reset();
         this.showToast('สร้างโครงการสำเร็จแล้ว', 'success');
 
         this.renderDashboard();
@@ -581,9 +645,15 @@ class App {
             div.addEventListener('mouseenter', () => div.style.backgroundColor = 'rgba(255,255,255,0.02)');
             div.addEventListener('mouseleave', () => div.style.backgroundColor = 'transparent');
 
+            const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
             div.innerHTML = `
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:500;">${p.name}</span>
+                        <div style="display:flex; align-items:center; gap:0.5rem;">
+                            <span style="font-weight:500;">${p.name}</span>
+                            <span class="priority-badge ${priorityCfg.class}" style="font-size:0.6rem; padding: 0.1rem 0.3rem;">
+                                <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                            </span>
+                        </div>
                     <span style="font-size:0.8rem; color:var(--text-muted);">${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
                 </div>
                 <div style="font-size:0.85rem; color:var(--text-muted); margin-top:0.25rem;">
@@ -649,10 +719,17 @@ class App {
                 }
             }
 
+            const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
+
             card.innerHTML = `
                 <div class="card-header">
-                    <div>
-                        <h3>${p.name}</h3>
+                    <div style="flex: 1;">
+                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem;">
+                            <h3>${p.name}</h3>
+                            <span class="priority-badge ${priorityCfg.class}">
+                                <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                            </span>
+                        </div>
                         <div class="card-date"><i class="fa-regular fa-clock"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH')}</div>
                          <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">
                             <i class="fa-solid fa-coins"></i> ${budgetFormatted}
@@ -689,6 +766,10 @@ class App {
         this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH');
         this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-';
         this.detailBudget.textContent = new Intl.NumberFormat('th-TH').format(project.budget);
+
+        const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
+        this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
+        this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
 
         const percent = Math.round(((project.currentStepIndex) / project.steps.length) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
@@ -1263,7 +1344,7 @@ class App {
             if (Array.isArray(step.notes) && step.notes.length > 0) {
                 // Sort by time for PDF (ascending - oldest first)
                 const sortedNotes = [...step.notes].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                notesHtml = sortedNotes.map(note =>
+                const notesListHtml = sortedNotes.map(note =>
                     `<div class="pdf-notes" style="margin-top: 5px; border-left: 2px solid #6366f1; padding-left: 10px; background: #f8fafc; margin-bottom: 5px; border-radius: 0 4px 4px 0;">
                         <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 2px;">
                             ${new Date(note.timestamp).toLocaleString('th-TH')}
@@ -1271,8 +1352,15 @@ class App {
                         <div style="font-size: 0.85rem; white-space: pre-wrap;">${note.text}</div>
                     </div>`
                 ).join('');
+
+                notesHtml = `
+                    <div style="margin-top: 10px;">
+                        <strong style="font-size: 0.9rem; color: #4f46e5;">บันทึกช่วยจำ:</strong>
+                        ${notesListHtml}
+                    </div>
+                `;
             } else if (typeof step.notes === 'string' && step.notes) {
-                notesHtml = `<div class="pdf-notes">${step.notes}</div>`;
+                notesHtml = `<div style="margin-top: 10px;"><strong style="font-size: 0.9rem; color: #4f46e5;">บันทึกช่วยจำ:</strong><div class="pdf-notes">${step.notes}</div></div>`;
             }
 
             stepsHtml += `
@@ -1303,6 +1391,7 @@ class App {
                     <p><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
                     <p><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
                     <p><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
+                    <p><strong>ระดับความเร่งด่วน:</strong> ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}</p>
                     <p><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
                 </div>
             </div>

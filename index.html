@@ -146,7 +146,11 @@
 
                 <div class="project-info-card">
                     <div class="project-title-row">
-                        <h1 id="detail-title">Project Name</h1>
+                        <div style="display: flex; align-items: center; gap: 1rem;">
+                            <h1 id="detail-title">Project Name</h1>
+                            <button class="btn-icon btn-sm" id="btn-edit-project-info" title="แก้ไขข้อมูลพื้นฐาน"><i
+                                    class="fa-solid fa-pen"></i></button>
+                        </div>
                         <span class="status-badge" id="detail-status">Status</span>
                     </div>
                     <p id="detail-desc" class="project-desc">Description...</p>
@@ -154,6 +158,8 @@
                         <span><i class="fa-solid fa-calendar"></i> เริ่ม: <span id="detail-start-date">-</span></span>
                         <span><i class="fa-solid fa-flag"></i> สิ้นสุด: <span id="detail-deadline">-</span></span>
                         <span><i class="fa-solid fa-coins"></i> งบประมาณ: <span id="detail-budget">-</span></span>
+                        <span><i class="fa-solid fa-bolt"></i> ความเร่งด่วน: <span id="detail-priority"
+                                class="priority-badge">-</span></span>
                     </div>
 
                     <div class="overall-progress">
@@ -240,13 +246,70 @@
                             <input type="text" id="inp-project-budget" placeholder="0.00">
                         </div>
                         <div class="form-group">
-                            <label>กำหนดเสร็จ (Deadline)</label>
-                            <input type="date" id="inp-project-deadline">
+                            <label>ระดับความเร่งด่วน</label>
+                            <select id="inp-project-priority">
+                                <option value="normal">ปกติ</option>
+                                <option value="urgent">ด่วน</option>
+                                <option value="very-urgent">ด่วนมาก</option>
+                                <option value="most-urgent">ด่วนที่สุด</option>
+                                <option value="extreme">ด่วนชิบหาย</option>
+                            </select>
                         </div>
+                    </div>
+                    <div class="form-group">
+                        <label>กำหนดเสร็จ (Deadline)</label>
+                        <input type="date" id="inp-project-deadline">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-text close-modal">ยกเลิก</button>
                         <button type="submit" class="btn btn-primary">สร้างโครงการ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for Edit Project Info -->
+    <div id="modal-edit-project" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>แก้ไขข้อมูลโครงการ</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-edit-project">
+                    <input type="hidden" id="edit-project-id">
+                    <div class="form-group">
+                        <label>ชื่อโครงการ <span class="required">*</span></label>
+                        <input type="text" id="edit-project-name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>รายละเอียด</label>
+                        <textarea id="edit-project-desc" rows="3"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>งบประมาณ (บาท)</label>
+                            <input type="text" id="edit-project-budget">
+                        </div>
+                        <div class="form-group">
+                            <label>ระดับความเร่งด่วน</label>
+                            <select id="edit-project-priority">
+                                <option value="normal">ปกติ</option>
+                                <option value="urgent">ด่วน</option>
+                                <option value="very-urgent">ด่วนมาก</option>
+                                <option value="most-urgent">ด่วนที่สุด</option>
+                                <option value="extreme">ด่วนชิบหาย</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>กำหนดเสร็จ (Deadline)</label>
+                        <input type="date" id="edit-project-deadline">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-text close-modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary">บันทึกการแก้ไข</button>
                     </div>
                 </form>
             </div>

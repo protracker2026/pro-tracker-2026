@@ -277,6 +277,7 @@ class App {
         this.detailProgressPercent = document.getElementById('detail-progress-percent');
 
         this.workflowTabs = document.getElementById('workflow-tabs');
+        this.btnEditProjectWorkflow = document.getElementById('btn-edit-project-workflow');
         this.stepTitle = document.getElementById('step-title');
         this.btnCompleteStep = document.getElementById('btn-complete-step');
         this.checklistItems = document.getElementById('checklist-items');
@@ -884,7 +885,14 @@ class App {
         if (this.navSettings) {
             this.navSettings.addEventListener('click', (e) => {
                 e.preventDefault();
-                this.openSettingsModal();
+                this.openSettingsModal(true); // Global mode
+            });
+        }
+
+        // Project Specific Edit Click
+        if (this.btnEditProjectWorkflow) {
+            this.btnEditProjectWorkflow.addEventListener('click', () => {
+                this.openSettingsModal(false); // Project mode
             });
         }
 
@@ -925,43 +933,69 @@ class App {
                     return;
                 }
                 try {
-                    // Update local state
-                    this.stepsTemplate = JSON.parse(JSON.stringify(this.tempStepsTemplate));
+                    if (this.isEditingGlobalSettings) {
+                        // --- GLOBAL SAVE LOGIC ---
+                        this.stepsTemplate = JSON.parse(JSON.stringify(this.tempStepsTemplate));
 
-                    // Fetch current projects to sync titles
-                    const workspace = await FirestoreManager.getWorkspaceData();
-                    const projects = workspace.projects || [];
+                        const workspace = await FirestoreManager.getWorkspaceData();
+                        const projects = workspace.projects || [];
 
-                    // Propagate title and checklist changes to projects with the same step count
-                    projects.forEach(p => {
-                        if (p.steps && p.steps.length === this.stepsTemplate.length) {
-                            p.steps.forEach((s, idx) => {
-                                const templateStep = this.stepsTemplate[idx];
-                                s.title = templateStep.title;
+                        projects.forEach(p => {
+                            if (p.steps && p.steps.length === this.stepsTemplate.length) {
+                                p.steps.forEach((s, idx) => {
+                                    const templateStep = this.stepsTemplate[idx];
+                                    s.title = templateStep.title;
+                                    const newChecklistTexts = templateStep.defaultChecklist || [];
+                                    const existingItems = s.checklist || [];
+                                    s.checklist = newChecklistTexts.map(text => {
+                                        const match = existingItems.find(item => item.text === text);
+                                        return { text: text, checked: match ? match.checked : false };
+                                    });
+                                });
+                            }
+                        });
 
-                                // Sync Checklist while preserving checked state
-                                const newChecklistTexts = templateStep.defaultChecklist || [];
-                                const existingItems = s.checklist || [];
+                        await FirestoreManager.updateWorkspaceSettings(code, {
+                            customSteps: this.stepsTemplate,
+                            projects: projects
+                        });
+                        this.showToast('บันทึกการตั้งค่าและอัปเดตโครงการทั้งหมดแล้ว', 'success');
+                    } else {
+                        // --- PROJECT SPECIFIC SAVE LOGIC ---
+                        if (!this.activeProject) return;
 
-                                s.checklist = newChecklistTexts.map(text => {
-                                    // See if this item already existed to keep its 'checked' status
-                                    const match = existingItems.find(item => item.text === text);
+                        this.activeProject.steps = this.tempStepsTemplate.map((t, idx) => {
+                            // Find existing step if possible (by ID or index)
+                            const existing = this.activeProject.steps.find(s => s.id === t.id) || this.activeProject.steps[idx];
+
+                            return {
+                                id: t.id || idx + 1,
+                                title: t.title,
+                                completed: existing ? existing.completed : false,
+                                completedAt: existing ? existing.completedAt : null,
+                                notes: existing ? existing.notes : "",
+                                checklist: t.defaultChecklist.map(text => {
+                                    const match = existing ? existing.checklist.find(item => item.text === text) : null;
                                     return {
                                         text: text,
                                         checked: match ? match.checked : false
                                     };
-                                });
-                            });
+                                })
+                            };
+                        });
+
+                        // Adjust currentStepIndex if steps were removed and it's out of bounds
+                        if (this.activeProject.currentStepIndex >= this.activeProject.steps.length) {
+                            this.activeProject.currentStepIndex = Math.max(0, this.activeProject.steps.length - 1);
                         }
-                    });
 
-                    // Save to Firestore (Update both customSteps and projects)
-                    await FirestoreManager.updateWorkspaceSettings(code, {
-                        customSteps: this.stepsTemplate,
-                        projects: projects
-                    });
+                        await FirestoreManager.updateProject(this.activeProject);
+                        this.showToast(`จัดการขั้นตอนของโครงการ "${this.activeProject.name}" เรียบร้อยแล้ว`, 'success');
 
-                    this.showToast('บันทึกการตั้งค่าและอัปเดตโครงการทั้งหมดแล้ว', 'success');
+                        // Current view is already 'detail', so this will refresh the UI
+                        this.openProjectDetail(this.activeProject.id, this.activeWorkflowStepIndex);
+                    }
+
                     this.modalSettings.classList.remove('open');
                 } catch (error) {
                     console.error(error);
@@ -978,9 +1012,25 @@ class App {
         }
     }
 
-    openSettingsModal() {
-        // Clone current template to temp for editing
-        this.tempStepsTemplate = JSON.parse(JSON.stringify(this.stepsTemplate));
+    openSettingsModal(isGlobal = true) {
+        this.isEditingGlobalSettings = isGlobal;
+
+        if (isGlobal) {
+            this.tempStepsTemplate = JSON.parse(JSON.stringify(this.stepsTemplate));
+            this.modalSettings.querySelector('h2').textContent = 'ตั้งค่าขั้นตอน (Global Template)';
+            if (this.btnResetSteps) this.btnResetSteps.style.display = 'block';
+        } else {
+            // For specifically editing active project
+            // We need to convert project.steps structure back to template structure
+            this.tempStepsTemplate = this.activeProject.steps.map(s => ({
+                id: s.id,
+                title: s.title,
+                defaultChecklist: s.checklist.map(c => c.text)
+            }));
+            this.modalSettings.querySelector('h2').textContent = `จัดการขั้นตอน: ${this.activeProject.name}`;
+            if (this.btnResetSteps) this.btnResetSteps.style.display = 'none';
+        }
+
         this.renderSettingsSteps();
         if (this.modalSettings) this.modalSettings.classList.add('open');
     }
@@ -1017,7 +1067,7 @@ class App {
             const deleteBtn = div.querySelector('.btn-delete-step');
             if (deleteBtn) {
                 deleteBtn.addEventListener('click', () => {
-                    if (confirm(`คุณเน่ใจหรือไม่ที่จะลบขั้นตอนที่ ${index + 1}: ${step.title}?`)) {
+                    if (confirm(`คุณแน่ใจหรือไม่ที่จะลบขั้นตอนที่ ${index + 1}: ${step.title}?`)) {
                         this.tempStepsTemplate.splice(index, 1);
                         this.renderSettingsSteps();
                     }

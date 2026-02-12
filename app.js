@@ -667,7 +667,8 @@ class App {
             card.className = 'project-card';
 
             const budgetFormatted = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(p.budget);
-            const progress = Math.round(((p.currentStepIndex) / p.steps.length) * 100);
+            const completedStepsCount = p.steps.filter(s => s.completed).length;
+            const progress = Math.round((completedStepsCount / p.steps.length) * 100);
 
             let statusClass = 'status-active';
             let statusText = 'กำลังดำเนินการ';
@@ -682,6 +683,22 @@ class App {
             }
 
             const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
+
+            // Dynamic logic for Latest Completed and Current Focus
+            const completedIndices = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
+            const lastCompletedIdx = completedIndices.length > 0 ? Math.max(...completedIndices) : -1;
+
+            // Current focus is the first incomplete step
+            const firstIncompleteIdx = p.steps.findIndex(s => !s.completed);
+            const currentFocusIdx = firstIncompleteIdx !== -1 ? firstIncompleteIdx : p.steps.length - 1;
+
+            const latestStepHtml = lastCompletedIdx >= 0
+                ? `<span><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> เสร็จล่าสุด: ${p.steps[lastCompletedIdx].title}</span>`
+                : `<span><i class="fa-regular fa-circle"></i> ยังไม่ได้เริ่มดำเนินการ</span>`;
+
+            const currentStepHtml = p.status === 'completed'
+                ? `<div class="next-step-info" style="color:var(--success)"><i class="fa-solid fa-check-double"></i> ดำเนินการเสร็จสิ้นครบทุกขั้นตอน</div>`
+                : `<div class="next-step-info"><i class="fa-solid fa-arrow-right"></i> กำลังดำเนินการ: ขั้นตอนที่ ${currentFocusIdx + 1}: ${p.steps[currentFocusIdx].title}</div>`;
 
             card.innerHTML = `
                 <div class="card-header">
@@ -701,12 +718,13 @@ class App {
                 </div>
                 <div class="card-steps">
                     <div class="step-info">
-                        <span>ขั้นตอนที่ ${p.currentStepIndex + 1}: ${p.steps[p.currentStepIndex].title}</span>
+                        ${latestStepHtml}
                         <span>${progress}%</span>
                     </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${progress}%"></div>
                     </div>
+                    ${currentStepHtml}
                 </div>
             `;
 
@@ -733,7 +751,8 @@ class App {
         this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
         this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
 
-        const percent = Math.round(((project.currentStepIndex) / project.steps.length) * 100);
+        const completedCount = project.steps.filter(s => s.completed).length;
+        const percent = Math.round((completedCount / project.steps.length) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
         this.detailProgressPercent.textContent = `${percent}%`;
 
@@ -1008,23 +1027,21 @@ class App {
 
         if (step.completed) {
             step.completedAt = new Date().toISOString();
-            // If this was the current step, move pointer forward
-            if (stepIndex === this.activeProject.currentStepIndex && stepIndex < this.activeProject.steps.length - 1) {
-                this.activeProject.currentStepIndex = stepIndex + 1;
-            }
-            // Check if all steps done
-            const allDone = this.activeProject.steps.every(s => s.completed);
-            if (allDone) this.activeProject.status = 'completed';
-
             this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
         } else {
             step.completedAt = null;
-            // If we uncheck a step, should we move pointer back? 
-            // Logic: stick pointer to the first incomplete step
-            this.activeProject.status = 'active'; // Re-open if closed
-
-            // Simplest logic: just update timestamp and status, let user navigate
             this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
+        }
+
+        // Recalculate current pointer: first incomplete step
+        const firstIncompleteIdx = this.activeProject.steps.findIndex(s => !s.completed);
+        if (firstIncompleteIdx !== -1) {
+            this.activeProject.currentStepIndex = firstIncompleteIdx;
+            this.activeProject.status = 'active';
+        } else {
+            // All steps are completed
+            this.activeProject.currentStepIndex = this.activeProject.steps.length - 1;
+            this.activeProject.status = 'completed';
         }
 
         await FirestoreManager.updateProject(this.activeProject);
@@ -1033,8 +1050,9 @@ class App {
         this.loadWorkflowStep(stepIndex);
         this.renderWorkflowTabs();
 
-        // specific: update progress bar in detail view
-        const percent = Math.round(((this.activeProject.currentStepIndex) / this.activeProject.steps.length) * 100);
+        // update progress bar in detail view
+        const completedCount = this.activeProject.steps.filter(s => s.completed).length;
+        const percent = Math.round((completedCount / this.activeProject.steps.length) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
         this.detailProgressPercent.textContent = `${percent}%`;
     }

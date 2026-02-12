@@ -549,6 +549,16 @@ body {
     color: var(--text-muted);
 }
 
+.next-step-info {
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+    color: var(--primary-color);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+}
+
 .progress-bar-container {
     height: 6px;
     background-color: var(--bg-body);

@@ -267,6 +267,7 @@ class App {
 
         this.btnBack = document.getElementById('btn-back-projects');
         this.btnDeleteProject = document.getElementById('btn-delete-project');
+        this.btnExportPdf = document.getElementById('btn-export-pdf');
         this.detailTitle = document.getElementById('detail-title');
         this.detailStatus = document.getElementById('detail-status');
         this.detailDesc = document.getElementById('detail-desc');
@@ -384,6 +385,10 @@ class App {
                 this.loadView('projects');
             }
         });
+
+        if (this.btnExportPdf) {
+            this.btnExportPdf.addEventListener('click', () => this.exportToPDF());
+        }
 
         this.btnAddChecklist.addEventListener('click', () => this.addChecklistItem());
         this.inpChecklist.addEventListener('keypress', (e) => {
@@ -1105,6 +1110,82 @@ class App {
 
         this.renderSettingsSteps();
         if (this.modalEditStep) this.modalEditStep.classList.remove('open');
+    }
+
+    async exportToPDF() {
+        if (!this.activeProject) return;
+        const project = this.activeProject;
+
+        // Create an invisible div for PDF template
+        const element = document.createElement('div');
+        element.className = 'pdf-template';
+
+        let stepsHtml = '';
+        project.steps.forEach((step, idx) => {
+            const checklistItems = step.checklist.map(item =>
+                `<li>${item.checked ? '[✓]' : '[ ]'} ${item.text}</li>`
+            ).join('');
+
+            stepsHtml += `
+                <div class="pdf-step">
+                    <div class="pdf-step-header">
+                        <span>ขั้นตอนที่ ${idx + 1}: ${step.title}</span>
+                        <span style="color: ${step.completed ? '#10b981' : '#64748b'}">
+                            ${step.completed ? 'เสร็จสิ้นเมื่อ ' + new Date(step.completedAt).toLocaleDateString('th-TH') : 'ยังไม่ดำเนินการ'}
+                        </span>
+                    </div>
+                    <ul class="pdf-checklist">
+                        ${checklistItems}
+                    </ul>
+                    ${step.notes ? `<div class="pdf-notes"><strong>บันทึก:</strong> ${step.notes}</div>` : ''}
+                </div>
+            `;
+        });
+
+        element.innerHTML = `
+            <div class="pdf-header">
+                <h1>รายงานสรุปโครงการ: ${project.name}</h1>
+                <p>สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
+            </div>
+            
+            <div class="pdf-section">
+                <h2>ข้อมูลโครงการ</h2>
+                <p><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
+                <p><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
+                <p><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
+                <p><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
+            </div>
+            
+            <div class="pdf-section">
+                <h2>ประวัติการดำเนินงาน (Workflow)</h2>
+                ${stepsHtml}
+            </div>
+
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8rem; text-align: center; color: #94a3b8;">
+                รายงานนี้ถูกสร้างโดยระบบ Procurement Tracker ณ วันที่ ${new Date().toLocaleString('th-TH')}
+            </div>
+        `;
+
+        document.body.appendChild(element);
+
+        const opt = {
+            margin: 10,
+            filename: `Project_Report_${project.name}.pdf`,
+            image: { type: 'jpeg', quality: 0.98 },
+            html2canvas: { scale: 2 },
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        try {
+            this.showToast('กำลังเตรียมไฟล์ PDF...', 'info');
+            await html2pdf().set(opt).from(element).save();
+            this.showToast('ดาวน์โหลด PDF เรียบร้อยแล้ว', 'success');
+        } catch (error) {
+            console.error('PDF Export Error:', error);
+            this.showToast('ไม่สามารถสร้าง PDF ได้', 'error');
+        } finally {
+            document.body.removeChild(element);
+        }
     }
 }
 

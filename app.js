@@ -896,8 +896,11 @@ class App {
         // Save
         if (this.btnSaveSettings) {
             this.btnSaveSettings.addEventListener('click', async () => {
-                const code = sessionStorage.getItem('accessCode');
-                if (!code) return;
+                const code = FirestoreManager.accessCode;
+                if (!code) {
+                    this.showToast('ไม่พบรหัสการเข้าถึง กรุณาลองใหม่', 'error');
+                    return;
+                }
                 try {
                     // Update local state
                     this.stepsTemplate = JSON.parse(JSON.stringify(this.tempStepsTemplate));

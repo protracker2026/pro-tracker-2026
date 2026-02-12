@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Procurement Tracker - ระบบจัดการงานจัดซื้อจัดจ้างส่วนตัว</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Sarabun:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-cube brand-icon"></i>
+                <h1>ProTracker</h1>
+            </div>
+
+            <nav class="nav-menu">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>ภาพรวม (Dashboard)</span>
+                </a>
+                <a href="#" class="nav-item" data-view="projects">
+                    <i class="fa-solid fa-list-check"></i>
+                    <span>โครงการทั้งหมด</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button id="btn-create-project" class="btn btn-primary full-width">
+                    <i class="fa-solid fa-plus"></i> สร้างโครงการใหม่
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-bar">
+                <div class="page-title">
+                    <h2 id="page-header-title">ภาพรวม</h2>
+                    <span id="current-date" class="date-display">Today</span>
+                </div>
+                <div class="user-profile">
+                    <div class="avatar">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard View -->
+            <section id="view-dashboard" class="view-section active">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue"><i class="fa-solid fa-folder-open"></i></div>
+                        <div class="stat-info">
+                            <h3>ทั้งหมด</h3>
+                            <span class="stat-value" id="stat-total">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-orange"><i class="fa-solid fa-bars-progress"></i></div>
+                        <div class="stat-info">
+                            <h3>กำลังดำเนินการ</h3>
+                            <span class="stat-value" id="stat-progress">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green"><i class="fa-solid fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>เสร็จสิ้น</h3>
+                            <span class="stat-value" id="stat-completed">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="stat-info">
+                            <h3>ใกล้กำหนด</h3>
+                            <span class="stat-value" id="stat-urgent">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="recent-activity">
+                    <div class="section-header">
+                        <h3><i class="fa-solid fa-clock-rotate-left"></i> กิจกรรมล่าสุด</h3>
+                    </div>
+                    <div id="activity-list" class="activity-list">
+                        <!-- Activity items will be injected here -->
+                        <div class="empty-state-small">ยังไม่มีกิจกรรม</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Projects List View -->
+            <section id="view-projects" class="view-section">
+                <div class="projects-controls">
+                    <div class="search-box">
+                        <i class="fa-solid fa-search"></i>
+                        <input type="text" id="search-input" placeholder="ค้นหาชื่อโครงการ...">
+                    </div>
+                    <div class="filter-box">
+                        <select id="filter-status">
+                            <option value="all">ทั้งหมด</option>
+                            <option value="active">กำลังดำเนินการ</option>
+                            <option value="completed">เสร็จสิ้น</option>
+                            <option value="urgent">ใกล้กำหนด (7 วัน)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="projects-grid" class="projects-grid">
+                    <!-- Project cards will be injected here -->
+                </div>
+            </section>
+
+            <!-- Project Detail View (Hidden by default) -->
+            <section id="view-detail" class="view-section">
+                <div class="detail-header">
+                    <button class="btn-back" id="btn-back-projects"><i class="fa-solid fa-arrow-left"></i> กลับ</button>
+                    <div class="detail-actions">
+                        <button class="btn btn-danger btn-sm" id="btn-delete-project"><i class="fa-solid fa-trash"></i>
+                            ลบโครงการ</button>
+                    </div>
+                </div>
+
+                <div class="project-info-card">
+                    <div class="project-title-row">
+                        <h1 id="detail-title">Project Name</h1>
+                        <span class="status-badge" id="detail-status">Status</span>
+                    </div>
+                    <p id="detail-desc" class="project-desc">Description...</p>
+                    <div class="project-meta">
+                        <span><i class="fa-solid fa-calendar"></i> เริ่ม: <span id="detail-start-date">-</span></span>
+                        <span><i class="fa-solid fa-flag"></i> สิ้นสุด: <span id="detail-deadline">-</span></span>
+                        <span><i class="fa-solid fa-coins"></i> งบประมาณ: <span id="detail-budget">-</span></span>
+                    </div>
+
+                    <div class="overall-progress">
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="detail-overall-progress" style="width: 0%"></div>
+                        </div>
+                        <span class="progress-text">ความคืบหน้า <span id="detail-progress-percent">0%</span></span>
+                    </div>
+                </div>
+
+                <div class="workflow-container">
+                    <div class="workflow-tabs" id="workflow-tabs">
+                        <!-- Step tabs generated by JS -->
+                    </div>
+
+                    <div class="workflow-content">
+                        <div class="step-header">
+                            <h2 id="step-title">1. สำรวจความต้องการ</h2>
+                            <button class="btn btn-outline btn-sm" id="btn-complete-step">
+                                <i class="fa-regular fa-circle-check"></i> ทำขั้นตอนเสร็จสิ้น
+                            </button>
+                        </div>
+
+                        <div class="checklist-section">
+                            <h3><i class="fa-solid fa-list-check"></i> รายการตรวจสอบ (Checklist)</h3>
+                            <div class="add-checklist-item">
+                                <input type="text" id="new-checklist-input" placeholder="เพิ่มรายการตรวจสอบ...">
+                                <button id="btn-add-checklist" class="btn btn-icon"><i
+                                        class="fa-solid fa-plus"></i></button>
+                            </div>
+                            <ul id="checklist-items" class="checklist-items">
+                                <!-- Checkbox items here -->
+                            </ul>
+                        </div>
+
+                        <div class="notes-section">
+                            <h3><i class="fa-solid fa-note-sticky"></i> บันทึกช่วยจำ</h3>
+                            <textarea id="step-notes"
+                                placeholder="บันทึกรายละเอียดเพิ่มเติมสำหรับขั้นตอนนี้..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal for New Project -->
+    <div id="modal-create" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>สร้างโครงการใหม่</h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="form-create-project">
+                    <div class="form-group">
+                        <label>ชื่อโครงการ <span class="required">*</span></label>
+                        <input type="text" id="inp-project-name" required placeholder="เช่น จัดซื้อครุภัณฑ์คอมพิวเตอร์">
+                    </div>
+                    <div class="form-group">
+                        <label>รายละเอียด</label>
+                        <textarea id="inp-project-desc" rows="3" placeholder="รายละเอียดเบื้องต้น..."></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>งบประมาณ (บาท)</label>
+                            <input type="text" id="inp-project-budget" placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>กำหนดเสร็จ (Deadline)</label>
+                            <input type="date" id="inp-project-deadline">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-text close-modal">ยกเลิก</button>
+                        <button type="submit" class="btn btn-primary">สร้างโครงการ</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Access Code Modal -->
+    <div id="modal-access-code" class="modal" style="z-index: 999;">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">🔐</div>
+                <h2 style="margin-bottom: 0.5rem;">เข้าใช้งานระบบ</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">กรุณากรอกรหัส Access Code เพื่อเข้าถึงข้อมูล
+                </p>
+
+                <form id="form-access-code">
+                    <div class="form-group">
+                        <input type="text" id="inp-access-code"
+                            placeholder="ตั้งรหัส หรือ กรอกรหัสเดิม (เช่น myteam2024)" required
+                            style="text-align: center; letter-spacing: 1px; font-size: 1.1rem;">
+                    </div>
+                    <button type="submit" class="btn btn-primary full-width">เข้าใช้งาน</button>
+                </form>
+
+                <div id="migration-option"
+                    style="margin-top: 1.5rem; display: none; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+                    <p style="font-size: 0.9rem; color: var(--warning); margin-bottom: 0.5rem;">
+                        <i class="fa-solid fa-cloud-upload"></i> พบข้อมูลเก่าในเครื่องนี้
+                    </p>
+                    <button id="btn-migrate" class="btn btn-outline full-width btn-sm">
+                        ใช้รหัสนี้ + ย้ายข้อมูลขึ้น Cloud
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container"></div>
+    <script type="module" src="app.js"></script>
+</body>
+
+</html>

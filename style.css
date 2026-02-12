@@ -948,9 +948,40 @@ body {
         /* Hide text on mobile */
     }
 
+    /* Change sidebar footer to FAB on mobile */
     .sidebar-footer {
-        display: none;
-        /* Hide big button on mobile */
+        display: block;
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: auto;
+        padding: 0;
+        z-index: 100;
+        border: none;
+        background: none;
+    }
+
+    #btn-create-project {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        padding: 0;
+        font-size: 1.25rem;
+    }
+    
+    #btn-create-project span, 
+    #btn-create-project i + span { /* Hide text, keep icon */
+        display: none; 
+    }
+    
+    /* Ensure icon is centered and visible */
+    #btn-create-project i {
+        margin: 0;
+        font-size: 1.5rem;
     }
 
     .top-bar {

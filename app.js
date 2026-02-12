@@ -910,11 +910,25 @@ class App {
                     const workspace = await FirestoreManager.getWorkspaceData();
                     const projects = workspace.projects || [];
 
-                    // Propagate title changes to projects with the same step count
+                    // Propagate title and checklist changes to projects with the same step count
                     projects.forEach(p => {
                         if (p.steps && p.steps.length === this.stepsTemplate.length) {
                             p.steps.forEach((s, idx) => {
-                                s.title = this.stepsTemplate[idx].title;
+                                const templateStep = this.stepsTemplate[idx];
+                                s.title = templateStep.title;
+
+                                // Sync Checklist while preserving checked state
+                                const newChecklistTexts = templateStep.defaultChecklist || [];
+                                const existingItems = s.checklist || [];
+
+                                s.checklist = newChecklistTexts.map(text => {
+                                    // See if this item already existed to keep its 'checked' status
+                                    const match = existingItems.find(item => item.text === text);
+                                    return {
+                                        text: text,
+                                        checked: match ? match.checked : false
+                                    };
+                                });
                             });
                         }
                     });

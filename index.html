@@ -199,8 +199,17 @@
 
                         <div class="notes-section">
                             <h3><i class="fa-solid fa-note-sticky"></i> บันทึกช่วยจำ</h3>
-                            <textarea id="step-notes"
-                                placeholder="บันทึกรายละเอียดเพิ่มเติมสำหรับขั้นตอนนี้..."></textarea>
+                            <div class="add-note-box">
+                                <textarea id="note-input" placeholder="พิมพ์บันทึกใหม่ที่นี่..."></textarea>
+                                <div style="text-align: right; margin-top: 0.5rem;">
+                                    <button id="btn-add-note" class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-paper-plane"></i> บันทึก
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="notes-list" class="notes-list">
+                                <!-- Notes will be injected here -->
+                            </div>
                         </div>
                     </div>
                 </div>

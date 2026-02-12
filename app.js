@@ -100,7 +100,8 @@ class Project {
             title: t.title,
             completed: false,
             completedAt: null,
-            notes: "",
+            completedAt: null,
+            notes: [],
             checklist: (t.defaultChecklist || []).map(text => ({
                 text: text,
                 checked: false
@@ -284,7 +285,9 @@ class App {
         this.checklistItems = document.getElementById('checklist-items');
         this.inpChecklist = document.getElementById('new-checklist-input');
         this.btnAddChecklist = document.getElementById('btn-add-checklist');
-        this.txtNotes = document.getElementById('step-notes');
+        this.inpNote = document.getElementById('note-input');
+        this.btnAddNote = document.getElementById('btn-add-note');
+        this.notesList = document.getElementById('notes-list');
 
         this.statTotal = document.getElementById('stat-total');
         this.statProgress = document.getElementById('stat-progress');
@@ -395,11 +398,12 @@ class App {
             if (e.key === 'Enter') this.addChecklistItem();
         });
 
-        this.txtNotes.addEventListener('change', async () => {
-            if (!this.activeProject) return;
-            const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
-            currentStep.notes = this.txtNotes.value;
-            await FirestoreManager.updateProject(this.activeProject);
+        this.btnAddNote.addEventListener('click', () => this.addNote());
+        this.inpNote.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.addNote();
+            }
         });
 
         this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
@@ -724,7 +728,13 @@ class App {
 
         // Render Content
         this.stepTitle.textContent = `${index + 1}. ${stepData.title}`;
-        this.txtNotes.value = stepData.notes || '';
+
+        // Migrate old string notes to array if needed
+        if (typeof stepData.notes === 'string') {
+            const oldText = stepData.notes;
+            stepData.notes = oldText ? [{ timestamp: new Date().toISOString(), text: oldText }] : [];
+        }
+        this.renderNotesList();
 
         // Button Logic
         if (stepData.completed) {
@@ -1166,11 +1176,79 @@ class App {
         if (this.modalEditStep) this.modalEditStep.classList.remove('open');
     }
 
+    renderNotesList() {
+        if (!this.notesList) return;
+        this.notesList.innerHTML = '';
+
+        const stepData = this.activeProject.steps[this.activeWorkflowStepIndex];
+        const notes = stepData.notes || [];
+
+        // Sort by timestamp (descending - newest first)
+        const sortedNotes = [...notes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+        sortedNotes.forEach((note) => {
+            const div = document.createElement('div');
+            div.className = 'note-item';
+
+            const dateStr = new Date(note.timestamp).toLocaleString('th-TH', {
+                day: '2-digit', month: '2-digit', year: '2-digit',
+                hour: '2-digit', minute: '2-digit'
+            });
+
+            div.innerHTML = `
+                <div class="note-timestamp">
+                    <span><i class="fa-regular fa-clock"></i> ${dateStr}</span>
+                    <button class="btn-delete-note" title="ลบบันทึก"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+                <div class="note-content">${note.text}</div>
+            `;
+
+            // Delete specific note
+            const delBtn = div.querySelector('.btn-delete-note');
+            delBtn.addEventListener('click', async () => {
+                if (confirm('คุณต้องการลบบันทึกนี้ใช่หรือไม่?')) {
+                    // Find original index because we sorted them
+                    const originalIdx = stepData.notes.findIndex(n => n.timestamp === note.timestamp && n.text === note.text);
+                    if (originalIdx !== -1) {
+                        stepData.notes.splice(originalIdx, 1);
+                        await FirestoreManager.updateProject(this.activeProject);
+                        this.renderNotesList();
+                    }
+                }
+            });
+
+            this.notesList.appendChild(div);
+        });
+    }
+
+    async addNote() {
+        if (!this.activeProject) return;
+        const text = this.inpNote.value.trim();
+        if (!text) return;
+
+        const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
+        if (!Array.isArray(currentStep.notes)) {
+            // Migration for old data
+            const oldNotes = currentStep.notes;
+            currentStep.notes = (typeof oldNotes === 'string' && oldNotes) ? [{ timestamp: new Date().toISOString(), text: oldNotes }] : [];
+        }
+
+        currentStep.notes.unshift({
+            timestamp: new Date().toISOString(),
+            text: text
+        });
+
+        await FirestoreManager.updateProject(this.activeProject);
+
+        this.inpNote.value = '';
+        this.renderNotesList();
+        this.showToast('บันทึกเรียบร้อยแล้ว', 'success');
+    }
+
     async exportToPDF() {
         if (!this.activeProject) return;
         const project = this.activeProject;
 
-        // Create an invisible div for PDF template
         const element = document.createElement('div');
         element.className = 'pdf-template';
 
@@ -1181,38 +1259,56 @@ class App {
                 return `<li>${item.checked ? '[✓]' : '[ ]'} ${item.text}${dateStr}</li>`;
             }).join('');
 
+            let notesHtml = '';
+            if (Array.isArray(step.notes) && step.notes.length > 0) {
+                // Sort by time for PDF (ascending - oldest first)
+                const sortedNotes = [...step.notes].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                notesHtml = sortedNotes.map(note =>
+                    `<div class="pdf-notes" style="margin-top: 5px; border-left: 2px solid #6366f1; padding-left: 10px; background: #f8fafc; margin-bottom: 5px; border-radius: 0 4px 4px 0;">
+                        <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 2px;">
+                            ${new Date(note.timestamp).toLocaleString('th-TH')}
+                        </div>
+                        <div style="font-size: 0.85rem; white-space: pre-wrap;">${note.text}</div>
+                    </div>`
+                ).join('');
+            } else if (typeof step.notes === 'string' && step.notes) {
+                notesHtml = `<div class="pdf-notes">${step.notes}</div>`;
+            }
+
             stepsHtml += `
-                <div class="pdf-step">
-                    <div class="pdf-step-header">
+                <div class="pdf-step" style="page-break-inside: avoid; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #f1f5f9; padding-bottom: 5px;">
                         <span>ขั้นตอนที่ ${idx + 1}: ${step.title}</span>
-                        <span style="color: ${step.completed ? '#10b981' : '#64748b'}">
+                        <span style="color: ${step.completed ? '#10b981' : '#64748b'}; font-size: 0.8rem;">
                             ${step.completed ? 'เสร็จสิ้นเมื่อ ' + new Date(step.completedAt).toLocaleDateString('th-TH') : 'ยังไม่ดำเนินการ'}
                         </span>
                     </div>
-                    <ul class="pdf-checklist">
+                    <ul style="list-style: none; padding-left: 5px; margin-bottom: 10px;">
                         ${checklistItems}
                     </ul>
-                    ${step.notes ? `<div class="pdf-notes"><strong>บันทึก:</strong> ${step.notes}</div>` : ''}
+                    ${notesHtml}
                 </div>
             `;
         });
 
         element.innerHTML = `
-            <div class="pdf-header">
-                <h1>รายงานสรุปโครงการ: ${project.name}</h1>
-                <p>สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
+            <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
+                <h1 style="color: #1e293b; margin: 0;">รายงานสรุปโครงการ: ${project.name}</h1>
+                <p style="color: #64748b; margin: 5px 0 0 0;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
             </div>
             
-            <div class="pdf-section">
-                <h2>ข้อมูลโครงการ</h2>
-                <p><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
-                <p><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
-                <p><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
-                <p><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
+            <div class="pdf-section" style="margin-bottom: 25px;">
+                <h2 style="font-size: 1.1rem; color: #4f46e5; margin-bottom: 10px; border-left: 4px solid #6366f1; padding-left: 10px;">ข้อมูลโครงการ</h2>
+                <div style="padding-left: 15px; font-size: 0.95rem;">
+                    <p><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
+                    <p><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
+                    <p><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
+                    <p><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
+                </div>
             </div>
             
-            <div class="pdf-section">
-                <h2>ประวัติการดำเนินงาน (Workflow)</h2>
+            <div class="pdf-section" style="margin-bottom: 25px;">
+                <h2 style="font-size: 1.1rem; color: #4f46e5; margin-bottom: 10px; border-left: 4px solid #6366f1; padding-left: 10px;">ประวัติการดำเนินงาน (Workflow & Notes)</h2>
                 ${stepsHtml}
             </div>
 
@@ -1227,7 +1323,7 @@ class App {
             margin: 10,
             filename: `Project_Report_${project.name}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2 },
+            html2canvas: { scale: 2, useCORS: true },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 

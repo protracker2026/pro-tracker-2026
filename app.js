@@ -425,7 +425,8 @@ class App {
                         const updatedProject = projects.find(p => p.id === this.activeProject.id);
                         if (updatedProject) {
                             this.activeProject = updatedProject;
-                            this.openProjectDetail(this.activeProject.id); // Refresh detail view UI
+                            // Pass the currently viewed step index to prevent jumping back to step 1
+                            this.openProjectDetail(this.activeProject.id, this.activeWorkflowStepIndex);
                         }
                     }
                 }
@@ -665,7 +666,7 @@ class App {
         });
     }
 
-    async openProjectDetail(id) {
+    async openProjectDetail(id, stepIndex = null) {
         const project = await FirestoreManager.getProject(id);
         if (!project) return;
 
@@ -684,7 +685,10 @@ class App {
         this.detailProgressPercent.textContent = `${percent}%`;
 
         this.renderWorkflowTabs();
-        this.loadWorkflowStep(project.currentStepIndex);
+
+        // If stepIndex is provided, use it, otherwise use the project's current progress step
+        const targetStep = stepIndex !== null ? stepIndex : project.currentStepIndex;
+        this.loadWorkflowStep(targetStep);
     }
 
     renderWorkflowTabs() {

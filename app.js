@@ -696,7 +696,7 @@ class App {
             let icon = `<i class="fa-regular fa-circle"></i>`;
             if (step.completed) icon = `<i class="fa-solid fa-circle-check"></i>`;
 
-            tab.innerHTML = `${icon} Step ${index + 1}`;
+            tab.innerHTML = `${icon} ${step.title}`;
             tab.addEventListener('click', () => this.loadWorkflowStep(index));
             this.workflowTabs.appendChild(tab);
         });

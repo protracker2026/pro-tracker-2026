@@ -33,12 +33,21 @@
     --shadow-lg: 0 12px 24px -5px rgba(0, 0, 0, 0.6);
 
     --font-main: 'Sarabun', 'Outfit', sans-serif;
+    color-scheme: dark;
 }
 
 * {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: #ceced2;
+    /* Softer, more premium white */
 }
 
 body {
@@ -83,7 +92,7 @@ body {
 .brand h1 {
     font-size: 1.25rem;
     font-weight: 700;
-    color: var(--text-main);
+    color: var(--primary-color);
     font-family: 'Outfit', sans-serif;
 }
 
@@ -673,9 +682,15 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--border-color);
+}
+
+#step-title {
+    color: var(--primary-color);
+    font-size: 1.35rem;
+    font-weight: 700;
 }
 
 .checklist-section {
@@ -700,11 +715,12 @@ body {
 
 .add-checklist-item input {
     flex: 1;
-    background-color: var(--bg-body);
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    padding: 0.6rem 1rem;
-    border-radius: var(--radius-sm);
+    padding: 0.4rem 0.75rem;
+    border-radius: 4px;
     color: var(--text-main);
+    font-size: 0.85rem;
 }
 
 .checklist-items {
@@ -716,30 +732,32 @@ body {
 
 .checklist-item {
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
-    padding: 0.75rem;
-    background-color: rgba(255, 255, 255, 0.02);
-    border-radius: var(--radius-sm);
-    transition: background-color 0.2s;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.2rem 0.5rem;
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 4px;
+    transition: all 0.2s;
+    min-height: 32px;
 }
 
 .checklist-item:hover {
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: rgba(255, 255, 255, 0.06);
+    border-color: rgba(249, 115, 22, 0.4);
 }
 
 .checklist-item input[type="checkbox"] {
-    margin-top: 0.25rem;
     accent-color: var(--primary-color);
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 0.95rem;
+    height: 0.95rem;
     cursor: pointer;
 }
 
 .checklist-text {
     flex: 1;
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.85rem;
+    line-height: 1.2;
     cursor: pointer;
     color: var(--text-check);
 }
@@ -1149,6 +1167,13 @@ body {
 .form-group textarea:focus {
     outline: none;
     border-color: var(--primary-color);
+}
+
+input[type="datetime-local"] {
+    background-color: var(--bg-card) !important;
+    color: var(--text-main) !important;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
 }
 
 /* Make calendar icon visible in dark theme */

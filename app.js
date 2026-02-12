@@ -846,6 +846,24 @@ class App {
         this.settingsStepsContainer = document.getElementById('settings-steps-container');
         this.btnResetSteps = document.getElementById('btn-reset-steps');
         this.btnSaveSettings = document.getElementById('btn-save-settings');
+        this.btnAddStepTemplate = document.getElementById('btn-add-step-template');
+
+        // Add Step Listener
+        if (this.btnAddStepTemplate) {
+            this.btnAddStepTemplate.addEventListener('click', () => {
+                const newStep = {
+                    id: Date.now(),
+                    title: "ขั้นตอนใหม่",
+                    defaultChecklist: []
+                };
+                this.tempStepsTemplate.push(newStep);
+                this.renderSettingsSteps();
+                // Scroll to bottom
+                setTimeout(() => {
+                    this.settingsStepsContainer.scrollTop = this.settingsStepsContainer.scrollHeight;
+                }, 100);
+            });
+        }
 
         // Edit Step Modal Elements
         // Since we injected HTML dynamically, these might be null if not in DOM?
@@ -984,7 +1002,8 @@ class App {
                     </div>
                 </div>
                 <div class="step-setting-actions">
-                    <button class="btn-icon btn-edit-step" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon btn-edit-step" title="แก้ไข" data-index="${index}"><i class="fa-solid fa-pen"></i></button>
+                    <button class="btn-icon btn-delete-step" title="ลบ" data-index="${index}" style="color:var(--danger);"><i class="fa-solid fa-trash"></i></button>
                 </div>
             `;
 
@@ -992,6 +1011,16 @@ class App {
             if (editBtn) {
                 editBtn.addEventListener('click', () => {
                     this.openEditStepModal(index);
+                });
+            }
+
+            const deleteBtn = div.querySelector('.btn-delete-step');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    if (confirm(`คุณเน่ใจหรือไม่ที่จะลบขั้นตอนที่ ${index + 1}: ${step.title}?`)) {
+                        this.tempStepsTemplate.splice(index, 1);
+                        this.renderSettingsSteps();
+                    }
                 });
             }
 

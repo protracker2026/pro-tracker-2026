@@ -270,8 +270,14 @@
                 <span class="close-modal">&times;</span>
             </div>
             <div class="modal-body">
-                <p class="text-muted" style="margin-bottom: 1rem;">แก้ไขขั้นตอนสำหรับโครงการใหม่
-                    (ไม่กระทบโครงการที่มีอยู่แล้ว)</p>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <p class="text-muted" style="margin-bottom: 0;">
+                        การแก้ไขชื่อ/เช็กลิสต์จะอัปเดตทุกโครงการที่จำนวนขั้นตอนเท่ากัน
+                        แต่การเพิ่ม/ลบจะมีผลเฉพาะโครงการใหม่เท่านั้น</p>
+                    <button type="button" class="btn btn-outline btn-sm" id="btn-add-step-template">
+                        <i class="fa-solid fa-plus"></i> เพิ่มขั้นตอน
+                    </button>
+                </div>
                 <div id="settings-steps-container" style="max-height: 400px; overflow-y: auto; padding-right: 0.5rem;">
                     <!-- Steps will be injected here -->
                 </div>

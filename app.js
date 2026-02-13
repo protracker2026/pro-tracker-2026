@@ -685,41 +685,46 @@ class App {
             const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
 
             // Dynamic logic for Latest Completed and Current Focus
-            const completedIndices = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
-            const lastCompletedIdx = completedIndices.length > 0 ? Math.max(...completedIndices) : -1;
+            const lastCompletedIdx = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
+            const maxCompletedIdx = lastCompletedIdx.length > 0 ? Math.max(...lastCompletedIdx) : -1;
 
             // Current focus is the first incomplete step
             const firstIncompleteIdx = p.steps.findIndex(s => !s.completed);
             const currentFocusIdx = firstIncompleteIdx !== -1 ? firstIncompleteIdx : p.steps.length - 1;
 
-            const latestStepHtml = lastCompletedIdx >= 0
-                ? `<span><i class="fa-solid fa-check-circle" style="color:var(--success)"></i> เสร็จล่าสุด: ${p.steps[lastCompletedIdx].title}</span>`
-                : `<span><i class="fa-regular fa-circle"></i> ยังไม่ได้เริ่มดำเนินการ</span>`;
+            const latestStepHtml = maxCompletedIdx >= 0
+                ? `<div class="latest-step-label"><i class="fa-solid fa-circle-check"></i> เสร็จล่าสุด: ${p.steps[maxCompletedIdx].title}</div>`
+                : `<div class="latest-step-label" style="color:var(--text-muted)"><i class="fa-regular fa-circle"></i> ยังไม่ได้เริ่มดำเนินการ</div>`;
 
             const currentStepHtml = p.status === 'completed'
-                ? `<div class="next-step-info" style="color:var(--success)"><i class="fa-solid fa-check-double"></i> ดำเนินการเสร็จสิ้นครบทุกขั้นตอน</div>`
-                : `<div class="next-step-info"><i class="fa-solid fa-arrow-right"></i> กำลังดำเนินการ: ขั้นตอนที่ ${currentFocusIdx + 1}: ${p.steps[currentFocusIdx].title}</div>`;
+                ? `<div class="next-step-info" style="color:var(--success); background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.2)">
+                    <i class="fa-solid fa-check-double"></i> ดำเนินการเสร็จสิ้นครบทุกขั้นตอน
+                  </div>`
+                : `<div class="next-step-info">
+                    <i class="fa-solid fa-compass fa-spin-hover"></i> 
+                    <span>กำลังดำเนินการ: ${p.steps[currentFocusIdx].title}</span>
+                  </div>`;
 
             card.innerHTML = `
-                <div class="card-header">
-                    <div style="flex: 1;">
-                        <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem;">
-                            <h3>${p.name}</h3>
-                            <span class="priority-badge ${priorityCfg.class}">
-                                <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
-                            </span>
-                        </div>
-                        <div class="card-date"><i class="fa-regular fa-clock"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' })}</div>
-                         <div style="font-size: 0.9rem; color: var(--text-muted); margin-top: 0.25rem;">
-                            <i class="fa-solid fa-coins"></i> ${budgetFormatted}
-                        </div>
-                    </div>
+                <div class="card-top-row">
+                    <span class="priority-badge ${priorityCfg.class}">
+                        <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                    </span>
                     <span class="status-badge ${statusClass}">${statusText}</span>
                 </div>
-                <div class="card-steps">
-                    <div class="step-info">
+                
+                <div class="card-body">
+                    <h3>${p.name}</h3>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <span class="info-badge"><i class="fa-regular fa-calendar"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
+                        <span class="info-badge"><i class="fa-solid fa-tag"></i> ${budgetFormatted}</span>
+                    </div>
+                </div>
+
+                <div class="card-footer">
+                    <div class="step-info" style="margin-bottom: 0.5rem">
                         ${latestStepHtml}
-                        <span>${progress}%</span>
+                        <span style="font-weight: 700; color: var(--text-main)">${progress}%</span>
                     </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${progress}%"></div>

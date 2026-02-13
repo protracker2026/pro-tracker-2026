@@ -716,7 +716,6 @@ class App {
                         <i class="fa-solid fa-arrow-right flow-arrow"></i>
                         <div class="flow-item next">
                             <span>${nextTitle}</span>
-                            <i class="fa-solid fa-compass fa-compass-pulse"></i>
                         </div>
                     </div>`;
             }

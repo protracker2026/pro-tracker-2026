@@ -689,22 +689,37 @@ class App {
             const lastCompletedIdx = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
             const maxCompletedIdx = lastCompletedIdx.length > 0 ? Math.max(...lastCompletedIdx) : -1;
 
-            // Current focus is the first incomplete step
             const firstIncompleteIdx = p.steps.findIndex(s => !s.completed);
             const currentFocusIdx = firstIncompleteIdx !== -1 ? firstIncompleteIdx : p.steps.length - 1;
 
-            const latestStepHtml = maxCompletedIdx >= 0
-                ? `<div class="latest-step-label"><i class="fa-solid fa-circle-check"></i> เสร็จล่าสุด: ${p.steps[maxCompletedIdx].title}</div>`
-                : `<div class="latest-step-label" style="color:var(--text-muted)"><i class="fa-regular fa-circle"></i> ยังไม่ได้เริ่มดำเนินการ</div>`;
+            // Build Flow UI
+            let stepFlowHtml = '';
+            if (p.status === 'completed') {
+                stepFlowHtml = `
+                    <div class="step-flow-container finished">
+                        <div class="flow-item completed">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <span>${p.steps[p.steps.length - 1].title}</span>
+                        </div>
+                        <div class="flow-status-tag">สำเร็จ</div>
+                    </div>`;
+            } else {
+                const prevTitle = maxCompletedIdx >= 0 ? p.steps[maxCompletedIdx].title : "เริ่มโครงการ";
+                const nextTitle = p.steps[currentFocusIdx].title;
 
-            const currentStepHtml = p.status === 'completed'
-                ? `<div class="next-step-info" style="color:var(--success); background:rgba(16,185,129,0.08); border-color:rgba(16,185,129,0.2)">
-                    <i class="fa-solid fa-check-double"></i> ดำเนินการเสร็จสิ้นครบทุกขั้นตอน
-                  </div>`
-                : `<div class="next-step-info">
-                    <i class="fa-solid fa-compass fa-spin-hover"></i> 
-                    <span>กำลังดำเนินการ: ${p.steps[currentFocusIdx].title}</span>
-                  </div>`;
+                stepFlowHtml = `
+                    <div class="step-flow-container">
+                        <div class="flow-item completed">
+                            <i class="${maxCompletedIdx >= 0 ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
+                            <span>${prevTitle}</span>
+                        </div>
+                        <i class="fa-solid fa-arrow-right flow-arrow"></i>
+                        <div class="flow-item next">
+                            <i class="fa-solid fa-compass fa-spin-hover"></i>
+                            <span>${nextTitle}</span>
+                        </div>
+                    </div>`;
+            }
 
             card.innerHTML = `
                 <div class="card-top-row">
@@ -723,14 +738,14 @@ class App {
                 </div>
 
                 <div class="card-footer">
-                    <div class="step-info" style="margin-bottom: 0.5rem">
-                        ${latestStepHtml}
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+                        <span>ความคืบหน้า</span>
                         <span style="font-weight: 700; color: var(--text-main)">${progress}%</span>
                     </div>
                     <div class="progress-bar-container">
                         <div class="progress-bar" style="width: ${progress}%"></div>
                     </div>
-                    ${currentStepHtml}
+                    ${stepFlowHtml}
                 </div>
             `;
 

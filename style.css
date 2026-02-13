@@ -556,36 +556,72 @@ body {
     margin-top: 1.5rem;
 }
 
-.step-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.5rem;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-}
-
-.next-step-info {
+/* Step Flow Indicator */
+.step-flow-container {
     margin-top: 1rem;
-    font-size: 0.8rem;
-    color: var(--primary-color);
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    font-weight: 600;
-    background: rgba(249, 115, 22, 0.08);
-    padding: 0.6rem 0.85rem;
-    border-radius: 8px;
-    border: 1px dashed rgba(249, 115, 22, 0.2);
+    background: rgba(255, 255, 255, 0.03);
+    padding: 0.75rem;
+    border-radius: 10px;
+    border: 1px solid var(--border-color);
 }
 
-.latest-step-label {
-    font-size: 0.75rem;
-    color: var(--success);
+.step-flow-container.finished {
+    background: rgba(16, 185, 129, 0.05);
+    border-color: rgba(16, 185, 129, 0.2);
+    justify-content: space-between;
+}
+
+.flow-item {
+    flex: 1;
     display: flex;
-    align-items: center;
-    gap: 0.35rem;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.flow-item i {
+    font-size: 0.85rem;
+}
+
+.flow-item span {
+    font-size: 0.75rem;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-muted);
+}
+
+.flow-item.completed i {
+    color: var(--success);
+}
+
+.flow-item.next i {
+    color: var(--primary-color);
+}
+
+.flow-item.next span {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.flow-arrow {
+    color: var(--text-muted);
+    font-size: 0.7rem;
+    opacity: 0.5;
+}
+
+.flow-status-tag {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--success);
+    background: rgba(16, 185, 129, 0.15);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
 }
 
 @keyframes spin {

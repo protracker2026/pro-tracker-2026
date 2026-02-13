@@ -314,7 +314,8 @@ class App {
 
         this.btnCloseModal.forEach(btn => {
             btn.addEventListener('click', () => {
-                this.modalCreate.classList.remove('open');
+                const modal = btn.closest('.modal');
+                if (modal) modal.classList.remove('open');
             });
         });
 

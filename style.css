@@ -577,21 +577,25 @@ body {
 .flow-item {
     flex: 1;
     display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 0.6rem;
     min-width: 0;
 }
 
 .flow-item i {
-    font-size: 0.85rem;
+    font-size: 1rem;
+    flex-shrink: 0;
 }
 
 .flow-item span {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
     font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.flow-item.completed span {
     color: var(--text-muted);
 }
 
@@ -600,42 +604,49 @@ body {
 }
 
 .flow-item.next i {
-    color: var(--primary-color);
+    color: white;
+    background: var(--primary-color);
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.75rem;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
 }
 
 .flow-item.next span {
     color: var(--text-main);
-    font-weight: 600;
+    font-weight: 700;
 }
 
 .flow-arrow {
     color: var(--text-muted);
-    font-size: 0.7rem;
-    opacity: 0.5;
+    font-size: 0.8rem;
+    opacity: 0.4;
+    padding: 0 0.2rem;
 }
 
-.flow-status-tag {
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: var(--success);
-    background: rgba(16, 185, 129, 0.15);
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    text-transform: uppercase;
-}
-
-@keyframes spin {
-    from {
-        transform: rotate(0deg);
+@keyframes compass-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 1;
     }
 
-    to {
-        transform: rotate(360deg);
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+
+    100% {
+        transform: scale(1);
+        opacity: 1;
     }
 }
 
-.fa-spin-hover {
-    animation: spin 8s linear infinite;
+.fa-compass-pulse {
+    animation: compass-pulse 2s ease-in-out infinite;
 }
 
 .progress-bar-container {

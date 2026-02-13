@@ -715,8 +715,8 @@ class App {
                         </div>
                         <i class="fa-solid fa-arrow-right flow-arrow"></i>
                         <div class="flow-item next">
-                            <i class="fa-solid fa-compass fa-spin-hover"></i>
                             <span>${nextTitle}</span>
+                            <i class="fa-solid fa-compass fa-compass-pulse"></i>
                         </div>
                     </div>`;
             }

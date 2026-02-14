@@ -1445,16 +1445,20 @@ body {
 .btn-outline:hover {
     border-color: var(--primary-color);
     color: var(--primary-color);
+    background-color: rgba(249, 115, 22, 0.1);
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.15);
 }
 
 .btn-danger {
     background-color: rgba(239, 68, 68, 0.1);
     color: var(--danger);
+    transition: all 0.2s;
 }
 
 .btn-danger:hover {
     background-color: var(--danger);
     color: white;
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
 }
 
 .btn-text {

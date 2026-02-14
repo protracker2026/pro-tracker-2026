@@ -516,6 +516,30 @@ class App {
                 this.sectionPostits.classList.toggle('active');
             });
         }
+
+        // --- Document Number Search ---
+        const inpDocSearch = document.getElementById('inp-doc-search');
+        const docSearchResults = document.getElementById('doc-search-results');
+        let searchTimeout = null;
+
+        inpDocSearch.addEventListener('input', () => {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => this.searchDocumentNumber(inpDocSearch.value.trim()), 300);
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.doc-search-box')) {
+                docSearchResults.style.display = 'none';
+            }
+        });
+
+        // Re-show results on focus if there's a query
+        inpDocSearch.addEventListener('focus', () => {
+            if (inpDocSearch.value.trim() && docSearchResults.children.length > 0) {
+                docSearchResults.style.display = 'block';
+            }
+        });
     }
 
     async initAccessCodeSystem() {
@@ -1376,6 +1400,81 @@ class App {
         if (percent === 100 && step.completed) {
             this.triggerCelebration();
         }
+    }
+
+    async searchDocumentNumber(query) {
+        const container = document.getElementById('doc-search-results');
+
+        if (!query) {
+            container.style.display = 'none';
+            container.innerHTML = '';
+            return;
+        }
+
+        const projects = await FirestoreManager.getProjects();
+        const results = [];
+        const q = query.toLowerCase();
+
+        projects.forEach(proj => {
+            (proj.steps || []).forEach((step, stepIdx) => {
+                if (step.documentNumber && step.documentNumber.toLowerCase().includes(q)) {
+                    results.push({
+                        projectId: proj.id,
+                        projectName: proj.name,
+                        stepIndex: stepIdx,
+                        stepTitle: step.title,
+                        documentNumber: step.documentNumber,
+                        completedAt: step.completedAt
+                    });
+                }
+            });
+        });
+
+        if (results.length === 0) {
+            container.innerHTML = `
+                <div style="padding: 12px 14px; color: var(--text-muted); font-size: 0.85rem; text-align: center;">
+                    <i class="fa-solid fa-circle-exclamation"></i> ไม่พบผลลัพธ์
+                </div>`;
+            container.style.display = 'block';
+            return;
+        }
+
+        container.innerHTML = results.map(r => {
+            // Highlight matching part
+            const idx = r.documentNumber.toLowerCase().indexOf(q);
+            const before = r.documentNumber.substring(0, idx);
+            const match = r.documentNumber.substring(idx, idx + query.length);
+            const after = r.documentNumber.substring(idx + query.length);
+            const highlighted = `${this.escapeHtml(before)}<mark style="background: #fbbf24; color: #1e293b; border-radius: 2px; padding: 0 1px;">${this.escapeHtml(match)}</mark>${this.escapeHtml(after)}`;
+
+            const dateStr = r.completedAt ? new Date(r.completedAt).toLocaleDateString('th-TH') : '';
+
+            return `
+                <div class="doc-search-item" data-project-id="${r.projectId}" data-step-index="${r.stepIndex}"
+                    style="padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border-color); transition: background 0.15s;"
+                    onmouseover="this.style.background='var(--bg-hover, rgba(99,102,241,0.1))'"
+                    onmouseout="this.style.background='transparent'">
+                    <div style="font-size: 0.9rem; font-weight: 600; color: var(--primary);">${highlighted}</div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">
+                        <i class="fa-solid fa-folder" style="margin-right: 3px;"></i>${this.escapeHtml(r.projectName)}
+                        &nbsp;→&nbsp;${this.escapeHtml(r.stepTitle)}
+                    </div>
+                    ${dateStr ? `<div style="font-size: 0.7rem; color: var(--text-muted);">${dateStr}</div>` : ''}
+                </div>`;
+        }).join('');
+
+        // Click handler for results
+        container.querySelectorAll('.doc-search-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const projectId = item.dataset.projectId;
+                const stepIndex = parseInt(item.dataset.stepIndex);
+                container.style.display = 'none';
+                document.getElementById('inp-doc-search').value = '';
+                this.openProjectDetail(projectId, stepIndex);
+            });
+        });
+
+        container.style.display = 'block';
     }
 
     triggerCelebration() {

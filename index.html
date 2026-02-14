@@ -47,6 +47,20 @@
                 </a>
             </nav>
 
+            <!-- Document Number Search -->
+            <div class="doc-search-box" style="padding: 0 1rem; margin-top: 1rem;">
+                <label style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; display: block;">
+                    <i class="fa-solid fa-search"></i> ค้นหาเลขหนังสือ
+                </label>
+                <div style="position: relative;">
+                    <input type="text" id="inp-doc-search" placeholder="พิมพ์เลขเต็มหรือบางส่วน..."
+                        style="width: 100%; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem;">
+                    <div id="doc-search-results"
+                        style="display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px); background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px; max-height: 260px; overflow-y: auto; z-index: 200; box-shadow: 0 8px 24px rgba(0,0,0,0.3);">
+                    </div>
+                </div>
+            </div>
+
             <div class="sidebar-footer">
                 <button id="btn-create-project" class="btn btn-primary full-width">
                     <i class="fa-solid fa-plus"></i> <span>สร้างโครงการใหม่</span>

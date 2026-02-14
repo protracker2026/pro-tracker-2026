@@ -1646,36 +1646,45 @@ class App {
             `;
         });
 
+        element.style.width = '190mm';
+        element.style.position = 'absolute';
+        element.style.left = '-9999px';
+        element.style.top = '0';
+
         element.innerHTML = `
             <style>
                 .pdf-template {
-                    font-family: 'Sarabun', sans-serif;
-                    line-height: 1.6;
+                    font-family: 'Sarabun', 'Noto Sans Thai', sans-serif;
+                    line-height: 1.8;
                     color: #1e293b;
-                    font-size: 0.85rem;
+                    font-size: 12px;
+                }
+                .pdf-template * {
+                    overflow-wrap: break-word;
+                    word-wrap: break-word;
                 }
                 .pdf-header h1 {
-                    font-size: 1.2rem;
-                    line-height: 1.8;
+                    font-size: 18px;
+                    line-height: 2;
                     margin: 0;
                     color: #1e293b;
-                    word-break: break-all;
                 }
                 .pdf-section h2 {
-                    font-size: 1rem;
+                    font-size: 15px;
                     margin-bottom: 8px;
-                    line-height: 1.8;
-                    word-break: break-all;
+                    line-height: 2;
                 }
                 .pdf-step {
-                    font-size: 0.8rem;
-                    line-height: 1.6;
+                    font-size: 12px;
+                    line-height: 1.8;
                 }
                 .pdf-notes {
-                    word-wrap: break-word;
                     overflow-wrap: break-word;
-                    word-break: break-word;
-                    line-height: 1.6;
+                    word-wrap: break-word;
+                    line-height: 1.8;
+                }
+                .pdf-template p {
+                    line-height: 1.8;
                 }
             </style>
             <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
@@ -1706,6 +1715,9 @@ class App {
         `;
 
         document.body.appendChild(element);
+
+        // Force browser layout calculation before html2canvas captures
+        element.offsetHeight;
 
         const opt = {
             margin: 10,

@@ -52,14 +52,16 @@ const PRIORITY_LABELS = {
 };
 
 class Project {
-    constructor(name, description, budget, deadline, priority = 'normal', purchaseType = 'buy', template = STEPS_TEMPLATE) {
+    constructor(name, description, budget, deadline, priority = 'normal', purchaseType = 'buy', template = STEPS_TEMPLATE, method = 'e-bidding', contractAmount = 0) {
         this.id = Date.now().toString(); // Simple ID generation
         this.name = name;
         this.description = description;
         this.budget = parseFloat(budget) || 0;
+        this.contractAmount = parseFloat(contractAmount) || 0;
         this.deadline = deadline || null;
         this.priority = priority;
         this.purchaseType = purchaseType;
+        this.procurementMethod = method;
         this.createdAt = new Date().toISOString();
         this.updatedAt = this.createdAt;
         this.status = 'active'; // active, completed
@@ -237,8 +239,10 @@ class App {
         this.inpProjectName = document.getElementById('inp-project-name');
         this.inpProjectDesc = document.getElementById('inp-project-desc');
         this.inpProjectBudget = document.getElementById('inp-project-budget');
+        this.inpProjectContract = document.getElementById('inp-project-contract');
         this.inpProjectDeadline = document.getElementById('inp-project-deadline');
         this.inpProjectPriority = document.getElementById('inp-project-priority');
+        this.inpProjectMethod = document.getElementById('inp-project-method');
 
         // Edit Project Info Modal Elements
         this.modalEditProject = document.getElementById('modal-edit-project');
@@ -248,8 +252,10 @@ class App {
         this.editProjectName = document.getElementById('edit-project-name');
         this.editProjectDesc = document.getElementById('edit-project-desc');
         this.editProjectBudget = document.getElementById('edit-project-budget');
+        this.editProjectContract = document.getElementById('edit-project-contract');
         this.editProjectPriority = document.getElementById('edit-project-priority');
         this.editProjectDeadline = document.getElementById('edit-project-deadline');
+        this.editProjectMethod = document.getElementById('edit-project-method');
 
         // Access Code Modal
         this.modalAccessCode = document.getElementById('modal-access-code');
@@ -271,8 +277,10 @@ class App {
         this.detailStartDate = document.getElementById('detail-start-date');
         this.detailDeadline = document.getElementById('detail-deadline');
         this.detailBudget = document.getElementById('detail-budget');
+        this.detailContractAmount = document.getElementById('detail-contract-amount');
         this.detailPriority = document.getElementById('detail-priority'); // Add this to HTML later or use a span
         this.detailPurchaseType = document.getElementById('detail-purchase-type');
+        this.detailProcurementMethod = document.getElementById('detail-procurement-method');
         this.detailOverallProgress = document.getElementById('detail-overall-progress');
         this.detailProgressPercent = document.getElementById('detail-progress-percent');
 
@@ -338,18 +346,25 @@ class App {
             });
         });
 
-        const inpBudget = document.getElementById('inp-project-budget');
-        inpBudget.addEventListener('blur', (e) => {
+        const formatCurrency = (e) => {
             const val = e.target.value.replace(/,/g, '');
             if (!isNaN(val) && val !== '') {
                 e.target.value = new Intl.NumberFormat('th-TH', { maximumFractionDigits: 2 }).format(val);
             }
-        });
-
-        inpBudget.addEventListener('focus', (e) => {
+        };
+        const unformatCurrency = (e) => {
             const val = e.target.value.replace(/,/g, '');
             if (!isNaN(val) && val !== '') {
                 e.target.value = val;
+            }
+        };
+
+        const budgetInputs = ['inp-project-budget', 'inp-project-contract', 'edit-project-budget', 'edit-project-contract'];
+        budgetInputs.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                el.addEventListener('blur', formatCurrency);
+                el.addEventListener('focus', unformatCurrency);
             }
         });
 
@@ -423,13 +438,18 @@ class App {
                 this.editProjectId.value = p.id;
                 this.editProjectName.value = p.name;
                 this.editProjectDesc.value = p.description || '';
-                this.editProjectBudget.value = p.budget || '';
+                this.editProjectBudget.value = p.budget ? new Intl.NumberFormat('th-TH').format(p.budget) : '';
+                this.editProjectContract.value = p.contractAmount ? new Intl.NumberFormat('th-TH').format(p.contractAmount) : '';
                 this.editProjectPriority.value = p.priority || 'normal';
 
                 // Populate Purchase Type
-                const editTypeSelect = document.getElementById('edit-project-type');
-                if (editTypeSelect) {
-                    editTypeSelect.value = p.purchaseType || 'buy';
+                if (document.getElementById('edit-project-type')) {
+                    document.getElementById('edit-project-type').value = p.purchaseType || 'buy';
+                }
+
+                // Populate Procurement Method
+                if (this.editProjectMethod) {
+                    this.editProjectMethod.value = p.procurementMethod || 'e-bidding';
                 }
 
                 this.editProjectDeadline.value = p.deadline || '';
@@ -446,9 +466,11 @@ class App {
                     ...this.activeProject,
                     name: this.editProjectName.value.trim(),
                     description: this.editProjectDesc.value.trim(),
-                    budget: parseFloat(this.editProjectBudget.value) || 0,
+                    budget: parseFloat(this.editProjectBudget.value.replace(/,/g, '')) || 0,
+                    contractAmount: parseFloat(this.editProjectContract.value.replace(/,/g, '')) || 0,
                     priority: this.editProjectPriority.value,
                     purchaseType: document.getElementById('edit-project-type').value,
+                    procurementMethod: this.editProjectMethod.value,
                     deadline: this.editProjectDeadline.value
                 };
 
@@ -617,9 +639,13 @@ class App {
         budgetRaw = budgetRaw.replace(/,/g, '');
         const budget = parseFloat(budgetRaw) || 0;
 
+        const method = this.inpProjectMethod.value || 'e-bidding';
+        let contractRaw = this.inpProjectContract.value.replace(/,/g, '');
+        const contractAmount = parseFloat(contractRaw) || 0;
+
         const deadline = this.inpProjectDeadline.value;
 
-        const newProject = new Project(name, desc, budget, deadline, priority, purchaseType, this.stepsTemplate);
+        const newProject = new Project(name, desc, budget, deadline, priority, purchaseType, this.stepsTemplate, method, contractAmount);
         await FirestoreManager.addProject(newProject);
 
         this.modalCreate.classList.remove('open');
@@ -779,8 +805,20 @@ class App {
             }
 
             const purchaseTypeBadge = `
-                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pBorderColor}; margin-right: 0.5rem;">
+                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pBorderColor};">
                     <i class="${pType.icon}"></i> ${pType.label}
+                </span>`;
+
+            // Procurement Method Badge
+            const methodLabels = {
+                'e-bidding': { label: 'e-bidding', color: '#10b981', icon: 'fa-solid fa-gavel' },
+                'specific': { label: 'เฉพาะเจาะจง', color: '#f59e0b', icon: 'fa-solid fa-bullseye' },
+                'selection': { label: 'คัดเลือก', color: '#6366f1', icon: 'fa-solid fa-users-viewfinder' }
+            };
+            const pMethod = methodLabels[p.procurementMethod] || methodLabels['e-bidding'];
+            const pMethodBadge = `
+                <span class="priority-badge" style="background: ${pMethod.color}1F; color: ${pMethod.color}; border: 1px solid ${pMethod.color}66;">
+                    <i class="${pMethod.icon}"></i> ${pMethod.label}
                 </span>`;
 
             // Dynamic logic for Latest Completed and Current Focus
@@ -820,7 +858,10 @@ class App {
 
             card.innerHTML = `
                 <div class="card-top-row">
-                    ${purchaseTypeBadge}
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        ${purchaseTypeBadge}
+                        ${pMethodBadge}
+                    </div>
                     <div style="display: flex; gap: 0.5rem;">
                         <span class="priority-badge ${priorityCfg.class}">
                             <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
@@ -881,6 +922,7 @@ class App {
         this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
         this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
         this.detailBudget.textContent = new Intl.NumberFormat('th-TH').format(project.budget);
+        this.detailContractAmount.textContent = project.contractAmount ? new Intl.NumberFormat('th-TH').format(project.contractAmount) : '0';
 
         const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
         this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
@@ -915,15 +957,30 @@ class App {
             const baseColor = pType.color;
             this.detailPurchaseType.style.backgroundColor = baseColor.replace('rgb', 'rgba').replace(')', ', 0.15)');
             if (!baseColor.includes('rgba')) {
-                // Pre-defined were hex or name, let's map them to rgba if needed
                 const rgbaMap = { '#3b82f6': 'rgba(59, 130, 246, 0.15)', '#a855f7': 'rgba(168, 85, 247, 0.15)', '#ec4899': 'rgba(236, 72, 153, 0.15)' };
                 this.detailPurchaseType.style.backgroundColor = rgbaMap[baseColor] || 'rgba(255,255,255,0.1)';
             }
             this.detailPurchaseType.style.color = baseColor;
             this.detailPurchaseType.style.border = `1px solid ${baseColor.replace(')', ', 0.3)')}`;
             if (!baseColor.includes('rgba')) {
-                this.detailPurchaseType.style.borderColor = baseColor + '4D'; // Add Alpha to Hex
+                this.detailPurchaseType.style.borderColor = baseColor + '4D';
             }
+        }
+
+        // Procurement Method Rendering
+        const methodLabels = {
+            'e-bidding': { label: 'e-bidding', color: '#10b981', icon: 'fa-solid fa-gavel' },
+            'specific': { label: 'เฉพาะเจาะจง', color: '#f59e0b', icon: 'fa-solid fa-bullseye' },
+            'selection': { label: 'คัดเลือก', color: '#6366f1', icon: 'fa-solid fa-users-viewfinder' }
+        };
+        const pMethod = methodLabels[project.procurementMethod] || methodLabels['e-bidding'];
+
+        if (this.detailProcurementMethod) {
+            this.detailProcurementMethod.innerHTML = `<i class="${pMethod.icon}"></i> ${pMethod.label}`;
+            const mColor = pMethod.color;
+            this.detailProcurementMethod.style.backgroundColor = mColor + '1F';
+            this.detailProcurementMethod.style.color = mColor;
+            this.detailProcurementMethod.style.border = `1px solid ${mColor}66`;
         }
 
         const completedCount = project.steps.filter(s => s.completed).length;

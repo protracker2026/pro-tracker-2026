@@ -1808,3 +1808,9 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     margin-top: 5px;
     color: #475569;
 }
+/* Fix iOS Auto Zoom on Input Focus */
+@media screen and (max-width: 768px) {
+    input, textarea, select {
+        font-size: 16px !important;
+    }
+}

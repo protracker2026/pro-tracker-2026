@@ -1905,7 +1905,7 @@ class App {
                 `รายละเอียด: ${project.description || '-'}`,
                 `งบประมาณ: ${new Intl.NumberFormat('th-TH').format(project.budget || 0)} บาท`,
                 `วงเงินตามสัญญา: ${new Intl.NumberFormat('th-TH').format(project.contractAmount || 0)} บาท`,
-                `ประเภทการจัดหา: ${project.procurementType === 'buy' ? 'ซื้อ (Buy)' : project.procurementType === 'hire' ? 'จ้าง (Hire)' : project.procurementType === 'rent' ? 'เช่า (Rent)' : 'อื่นๆ'}`,
+                `ประเภทการจัดหา: ${project.purchaseType === 'buy' ? 'ซื้อ (Buy)' : project.purchaseType === 'hire' ? 'จ้าง (Hire)' : project.purchaseType === 'rent' ? 'เช่า (Rent)' : '-'}`,
                 `วิธีการจัดหา: ${project.procurementMethod || '-'}`,
                 `ระดับความเร่งด่วน: ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}`,
                 `กำหนดเสร็จ (Deadline): ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}`,

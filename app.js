@@ -44,11 +44,11 @@ const STEPS_TEMPLATE = [
 ];
 
 const PRIORITY_LABELS = {
-    'normal': { label: 'ปกติ', class: 'priority-normal', icon: 'fa-solid fa-circle-check' },
-    'urgent': { label: 'ด่วน', class: 'priority-urgent', icon: 'fa-solid fa-bolt' },
-    'very-urgent': { label: 'ด่วนมาก', class: 'priority-very-urgent', icon: 'fa-solid fa-angles-up' },
-    'most-urgent': { label: 'ด่วนที่สุด', class: 'priority-most-urgent', icon: 'fa-solid fa-fire' },
-    'extreme': { label: 'ด่วนชิบหาย', class: 'priority-extreme', icon: 'fa-solid fa-skull-crossbones' }
+    'normal': { label: 'ปกติ', class: 'priority-normal', icon: '' },
+    'urgent': { label: 'ด่วน', class: 'priority-urgent', icon: '' },
+    'very-urgent': { label: 'ด่วนมาก', class: 'priority-very-urgent', icon: '' },
+    'most-urgent': { label: 'ด่วนที่สุด', class: 'priority-most-urgent', icon: '' },
+    'extreme': { label: 'ด่วนชิบหาย', class: 'priority-extreme', icon: '' }
 };
 
 class Project {
@@ -792,7 +792,7 @@ class App {
                     ${purchaseTypeBadge}
                     <div style="display: flex; gap: 0.5rem;">
                         <span class="priority-badge ${priorityCfg.class}">
-                            <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                            ${priorityCfg.icon ? `<i class="${priorityCfg.icon}"></i> ` : ''}${priorityCfg.label}
                         </span>
                         <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
@@ -853,7 +853,7 @@ class App {
         this.detailBudget.textContent = new Intl.NumberFormat('th-TH').format(project.budget);
 
         const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
-        this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
+        this.detailPriority.innerHTML = `${priorityCfg.icon ? `<i class="${priorityCfg.icon}"></i> ` : ''}${priorityCfg.label}`;
         this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
 
         // Sync Priority Style to Glassmorphism (same as purchase type logic)

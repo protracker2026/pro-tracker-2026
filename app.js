@@ -1649,7 +1649,7 @@ class App {
         element.innerHTML = `
             <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
                 <p style="color: #64748b; margin: 0 0 4px 0; font-size: 0.9rem;">รายงานสรุปโครงการ</p>
-                <h1 style="color: #1e293b; margin: 0; font-size: 0.95rem; line-height: 1.8; letter-spacing: 0.5px;">${project.name}</h1>
+                <h1 style="color: #1e293b; margin: 0; font-size: 1.1rem; line-height: 1.6;">${project.name}</h1>
                 <p style="color: #64748b; margin: 5px 0 0 0; font-size: 0.8rem;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
             </div>
             

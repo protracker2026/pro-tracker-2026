@@ -323,11 +323,18 @@ body {
 .search-box input {
     width: 100%;
     padding: 0.75rem 1rem 0.75rem 2.8rem;
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.08);
+    border: 1.5px solid rgba(255, 255, 255, 0.2);
     border-radius: var(--radius-sm);
     color: var(--text-main);
     font-family: inherit;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s;
+}
+
+.search-box input:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
 }
 
 .search-box input:focus {
@@ -831,22 +838,24 @@ body {
 
 .add-checklist-item input {
     flex: 1;
-    background-color: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    padding: 0.5rem 0.85rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
+    padding: 0.65rem 1rem;
     border-radius: 6px;
     color: var(--text-main);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     transition: all 0.2s;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .add-checklist-item input:hover {
-    border-color: rgba(255, 255, 255, 0.2);
-    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .add-checklist-item input::placeholder {
-    color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.5);
 }
 
 .add-checklist-item input:focus {
@@ -1052,26 +1061,28 @@ body {
 .add-note-box textarea {
     width: 100%;
     min-height: 80px;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.1);
+    border: 1.5px solid rgba(255, 255, 255, 0.3);
     border-radius: var(--radius-sm);
-    padding: 0.75rem;
+    padding: 0.85rem;
     color: var(--text-main);
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     font-family: inherit;
     resize: vertical;
     transition: all 0.2s;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .add-note-box textarea:hover {
-    background-color: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.25);
+    background-color: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.5);
 }
 
 .add-note-box textarea:focus {
     outline: none;
     border-color: var(--primary-color);
-    background-color: rgba(0, 0, 0, 0.2);
+    background-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
 }
 
 .notes-list {
@@ -1430,10 +1441,10 @@ body {
 }
 
 .btn-icon {
-    width: 32px;
-    height: 32px;
+    width: 34px;
+    height: 34px;
     padding: 0;
-    border-radius: var(--radius-sm);
+    border-radius: 50%;
     background-color: var(--primary-color);
     color: white;
     border: none;
@@ -1441,10 +1452,14 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-icon:hover {
     background-color: var(--primary-hover);
+    transform: scale(1.15);
+    box-shadow: 0 6px 16px rgba(249, 115, 22, 0.5);
 }
 
 .btn-sm {

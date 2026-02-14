@@ -379,6 +379,7 @@ body {
     white-space: normal;
     -webkit-line-clamp: 3;
     /* Allow 3 lines since font is smaller */
+    line-clamp: 3;
     overflow: hidden;
     color: var(--text-main);
     display: -webkit-box;
@@ -728,19 +729,26 @@ body {
     gap: 0.5rem;
 }
 
+.step-tab.completed {
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #10b981;
+    background-color: rgba(16, 185, 129, 0.05);
+}
+
 .step-tab:hover {
+    border-color: var(--primary-color);
     background-color: rgba(255, 255, 255, 0.05);
 }
 
 .step-tab.active {
     background-color: var(--primary-light);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    border-color: var(--primary-color) !important;
+    color: var(--primary-color) !important;
+    box-shadow: 0 0 10px rgba(249, 115, 22, 0.1);
 }
 
-.step-tab.completed {
-    border-color: var(--success);
-    color: var(--success);
+.step-tab.active:hover {
+    background-color: rgba(249, 115, 22, 0.15);
 }
 
 .step-tab i {

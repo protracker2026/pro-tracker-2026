@@ -503,8 +503,7 @@ class App {
             }
         });
 
-        this.btnCompleteStep.addEventListener('click', (e) => this.handleStepClick(e));
-        this.btnCompleteStep.addEventListener('dblclick', (e) => this.handleStepRevert(e));
+        this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
 
         // Collapsible Sections
         if (this.headerTimeline) {
@@ -1019,7 +1018,6 @@ class App {
         this.activeProject.steps.forEach((step, index) => {
             const tab = document.createElement('div');
             tab.className = `step-tab ${index === this.activeProject.currentStepIndex ? 'active' : ''} ${step.completed ? 'completed' : ''}`;
-            tab.style.userSelect = 'none'; // Prevent selection on dblclick
 
             let icon = `<i class="fa-regular fa-circle"></i>`;
             if (step.completed) icon = `<i class="fa-solid fa-circle-check"></i>`;
@@ -1028,13 +1026,6 @@ class App {
             tab.addEventListener('click', () => {
                 this.loadWorkflowStep(index);
             });
-
-            tab.addEventListener('dblclick', async (e) => {
-                e.preventDefault();
-                this.activeWorkflowStepIndex = index;
-                await this.handleStepRevert(e);
-            });
-
             this.workflowTabs.appendChild(tab);
         });
     }
@@ -1312,77 +1303,21 @@ class App {
         this.loadWorkflowStep(this.activeWorkflowStepIndex);
     }
 
-    handleStepClick(e) {
+    async toggleStepCompletion() {
         if (!this.activeProject) return;
+
         const stepIndex = this.activeWorkflowStepIndex;
         const step = this.activeProject.steps[stepIndex];
 
         if (step.completed) {
-            if (this.clickTimeout) clearTimeout(this.clickTimeout);
-            this.clickTimeout = setTimeout(() => {
-                this.openStepCompletionModal('edit');
-            }, 250);
-        } else {
-            this.openStepCompletionModal('complete');
-        }
-    }
-
-    async handleStepRevert(e) {
-        if (!this.activeProject) return;
-        const stepIndex = this.activeWorkflowStepIndex;
-        const step = this.activeProject.steps[stepIndex];
-
-        if (this.clickTimeout) clearTimeout(this.clickTimeout);
-
-        if (step.completed) {
-            await this.revertStepCompletion();
-        } else {
-            await this.quickCompleteStep();
-        }
-    }
-
-    async quickCompleteStep() {
-        if (!this.activeProject) return;
-        const stepIndex = this.activeWorkflowStepIndex;
-        const step = this.activeProject.steps[stepIndex];
-
-        step.completed = true;
-
-        // Quick complete defaults
-        if (this.activeProject.docNumberPrefix) {
-            step.documentNumber = this.activeProject.docNumberPrefix;
-        } else {
+            // --- Reverting: no popup needed ---
+            step.completed = false;
+            step.completedAt = null;
             step.documentNumber = null;
-        }
-
-        step.documentDate = this._formatDDMMYYYY(new Date());
-        step.completedAt = new Date().toISOString();
-
-        this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
-        await this._saveAndRefreshStep(stepIndex);
-    }
-
-    async revertStepCompletion() {
-        if (!this.activeProject) return;
-        const stepIndex = this.activeWorkflowStepIndex;
-        const step = this.activeProject.steps[stepIndex];
-
-        step.completed = false;
-        step.completedAt = null;
-        step.documentNumber = null;
-        step.documentDate = null;
-        this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
-        await this._saveAndRefreshStep(stepIndex);
-    }
-
-    openStepCompletionModal(mode = 'complete') {
-        if (!this.activeProject) return;
-
-        const stepIndex = this.activeWorkflowStepIndex;
-        const step = this.activeProject.steps[stepIndex];
-
-        // Revert logic handled by handleStepRevert
-        {
+            step.documentDate = null;
+            this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
+            await this._saveAndRefreshStep(stepIndex);
+        } else {
             // --- Completing: show popup ---
             const modal = document.getElementById('modal-step-complete');
             const label = document.getElementById('step-complete-label');
@@ -1410,28 +1345,10 @@ class App {
             inpSuffix.value = '';
 
             // Set dates via Flatpickr
-            let docDateStr = this._formatDDMMYYYY(new Date());
-            let completeDateStr = this._formatDDMMYYYY(new Date());
+            inpDocDate._flatpickr.setDate(today);
+            inpDate._flatpickr.setDate(today);
 
-            if (mode === 'edit') {
-                const fullDocNum = step.documentNumber || '';
-                if (fullDocNum.startsWith(prefix) && prefix.length > 0) {
-                    inpSuffix.value = fullDocNum.substring(prefix.length);
-                } else {
-                    inpSuffix.value = fullDocNum;
-                    inpPrefix.value = ''; // clear prefix if mismatch to avoid duplication
-                }
-                if (step.documentDate) docDateStr = step.documentDate;
-                if (step.completedAt) completeDateStr = this._formatDDMMYYYY(new Date(step.completedAt));
-
-                btnConfirm.innerHTML = '<i class="fa-solid fa-save"></i> บันทึกการแก้ไข';
-            } else {
-                btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น';
-            }
-
-            inpDocDate._flatpickr.setDate(this._parseDDMMYYYY(docDateStr) || new Date());
-            inpDate._flatpickr.setDate(this._parseDDMMYYYY(completeDateStr) || new Date());
-
+            btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น';
             modal.classList.add('open');
 
             // Auto-focus suffix if prefix already set
@@ -1460,18 +1377,16 @@ class App {
                     step.documentNumber = null;
                 }
 
-                // Document date (ลงวันที่) — store as DD/MM/YYYY string
                 step.documentDate = inpDocDate.value.trim() || null;
 
-                // Completion / approval date — parse DD/MM/YYYY to ISO
+                // Completion / approval date
                 const parsedDate = this._parseDDMMYYYY(inpDate.value.trim());
                 step.completedAt = parsedDate
                     ? parsedDate.toISOString()
                     : new Date().toISOString();
 
                 modal.classList.remove('open');
-                const msg = mode === 'edit' ? `บันทึกแก้ไขขั้นตอนที่ ${stepIndex + 1}` : `บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`;
-                this.showToast(msg, 'success');
+                this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
                 await this._saveAndRefreshStep(stepIndex);
             });
         }

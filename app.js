@@ -1830,193 +1830,163 @@ class App {
         try {
             this.showToast('กำลังเตรียมไฟล์ PDF...', 'info');
 
-            // 1. Load Thai Font (Sarabun)
-            // We use a helper function to fetch font as base64
-            const fontUrl = 'https://cdn.jsdelivr.net/npm/roboto-font@0.1.0/fonts/Roboto/roboto-regular-webfont.ttf'; // Demo font first to test logic, will swap to Thai font URL below
-            // Better Thai Font URL that supports CORS
-            const thaiFontUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/sarabun/Sarabun-Regular.ttf';
-            const thaiFontBoldUrl = 'https://raw.githubusercontent.com/google/fonts/main/ofl/sarabun/Sarabun-Bold.ttf';
+            // --- Helper: build procurement type label ---
+            const getPurchaseTypeLabel = (type) => {
+                const map = { buy: 'ซื้อ (Buy)', hire: 'จ้าง (Hire)', rent: 'เช่า (Rent)' };
+                return map[type] || '-';
+            };
 
-            const toBase64 = (blob) => new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
+            // --- Helper: build procurement method label ---
+            const getMethodLabel = (method) => {
+                const map = { 'e-bidding': 'e-bidding', 'specific': 'เฉพาะเจาะจง', 'selection': 'คัดเลือก' };
+                return map[method] || method || '-';
+            };
 
-            const [fontRegular, fontBold] = await Promise.all([
-                fetch(thaiFontUrl).then(res => res.blob()).then(toBase64),
-                fetch(thaiFontBoldUrl).then(res => res.blob()).then(toBase64)
-            ]);
+            // --- 1. Build HTML report ---
+            const container = document.createElement('div');
+            container.id = 'pdf-render-area';
+            container.style.cssText = `
+                position: fixed; left: -9999px; top: 0;
+                width: 794px;
+                background: white;
+                font-family: 'Sarabun', sans-serif;
+                color: #1e293b;
+                padding: 40px 50px;
+                line-height: 1.7;
+                font-size: 14px;
+            `;
 
-            // 2. Initialize jsPDF
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            // --- Title ---
+            let html = `
+                <div style="color: #64748b; font-size: 12px; margin-bottom: 4px;">รายงานสรุปโครงการ</div>
+                <div style="font-size: 22px; font-weight: 700; color: #1e293b; margin-bottom: 4px;">${this.escapeHtml(project.name)}</div>
+                <div style="color: #64748b; font-size: 12px; margin-bottom: 12px;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</div>
+                <hr style="border: none; border-top: 2px solid #6366f1; margin-bottom: 16px;">
+            `;
 
-            // 3. Add Fonts
-            doc.addFileToVFS('Sarabun-Regular.ttf', fontRegular);
-            doc.addFont('Sarabun-Regular.ttf', 'Sarabun', 'normal');
-
-            doc.addFileToVFS('Sarabun-Bold.ttf', fontBold);
-            doc.addFont('Sarabun-Bold.ttf', 'Sarabun', 'bold');
-
-            doc.setFont('Sarabun', 'normal');
-
-            // 4. Draw Content
-            // Title
-            doc.setFontSize(10);
-            doc.setTextColor(100, 116, 139); // Gray
-            doc.text('รายงานสรุปโครงการ', 14, 20);
-
-            doc.setFontSize(16);
-            doc.setTextColor(30, 41, 59); // Dark
-            doc.setFont('Sarabun', 'bold');
-
-            // Split Title Text
-            const title = project.name;
-            const splitTitle = doc.splitTextToSize(title, 180); // Width 180mm
-            doc.text(splitTitle, 14, 28);
-
-            let yPos = 28 + (splitTitle.length * 8);
-
-            doc.setFontSize(10);
-            doc.setFont('Sarabun', 'normal');
-            doc.setTextColor(100, 116, 139);
-            doc.text(`สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}`, 14, yPos);
-
-            yPos += 10;
-            doc.setDrawColor(99, 102, 241); // Indigo
-            doc.setLineWidth(0.5);
-            doc.line(14, yPos, 196, yPos);
-            yPos += 10;
-
-            // Project Info
-            doc.setFontSize(14);
-            doc.setTextColor(79, 70, 229); // Indigo
-            doc.setFont('Sarabun', 'bold');
-            doc.text('ข้อมูลโครงการ', 14, yPos);
-            yPos += 8;
-
-            doc.setFontSize(11);
-            doc.setTextColor(30, 41, 59);
-            doc.setFont('Sarabun', 'normal');
-
-            const details = [
-                `รายละเอียด: ${project.description || '-'}`,
-                `งบประมาณ: ${new Intl.NumberFormat('th-TH').format(project.budget || 0)} บาท`,
-                `วงเงินตามสัญญา: ${new Intl.NumberFormat('th-TH').format(project.contractAmount || 0)} บาท`,
-                `ประเภทการจัดหา: ${project.purchaseType === 'buy' ? 'ซื้อ (Buy)' : project.purchaseType === 'hire' ? 'จ้าง (Hire)' : project.purchaseType === 'rent' ? 'เช่า (Rent)' : '-'}`,
-                `วิธีการจัดหา: ${project.procurementMethod || '-'}`,
-                `ระดับความเร่งด่วน: ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}`,
-                `กำหนดเสร็จ (Deadline): ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}`,
-                `สถานะปัจจุบัน: ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}`
+            // --- Project Info ---
+            html += `<div style="font-size: 17px; font-weight: 700; color: #4f46e5; margin-bottom: 10px;">ข้อมูลโครงการ</div>`;
+            const infoItems = [
+                ['รายละเอียด', this.escapeHtml(project.description || '-')],
+                ['งบประมาณ', `${new Intl.NumberFormat('th-TH').format(project.budget || 0)} บาท`],
+                ['วงเงินตามสัญญา', `${new Intl.NumberFormat('th-TH').format(project.contractAmount || 0)} บาท`],
+                ['ประเภทการจัดหา', getPurchaseTypeLabel(project.purchaseType)],
+                ['วิธีการจัดหา', getMethodLabel(project.procurementMethod)],
+                ['ระดับความเร่งด่วน', PRIORITY_LABELS[project.priority]?.label || 'ปกติ'],
+                ['กำหนดเสร็จ (Deadline)', project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'],
+                ['สถานะปัจจุบัน', project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ']
             ];
-
-            details.forEach(line => {
-                doc.text(line, 20, yPos);
-                yPos += 7;
+            infoItems.forEach(([label, value]) => {
+                html += `<div style="margin-left: 10px; margin-bottom: 2px;"><strong>${label}:</strong> ${value}</div>`;
             });
 
-            yPos += 5;
+            // --- Workflow ---
+            html += `<div style="font-size: 17px; font-weight: 700; color: #4f46e5; margin: 20px 0 10px;">ประวัติการดำเนินงาน (Workflow & Notes)</div>`;
 
-            // Workflow Section
-            doc.setFontSize(14);
-            doc.setTextColor(79, 70, 229);
-            doc.setFont('Sarabun', 'bold');
-            doc.text('ประวัติการดำเนินงาน (Workflow & Notes)', 14, yPos);
-            yPos += 10;
-
-            // Render Steps using Loop
             project.steps.forEach((step, index) => {
-                // Check page break
-                if (yPos > 270) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-
-                // Step Header
-                doc.setFillColor(241, 245, 249); // Slate 100
-                doc.rect(14, yPos, 182, 10, 'F'); // Background
-
-                doc.setFontSize(11);
-                doc.setTextColor(30, 41, 59);
-                doc.setFont('Sarabun', 'bold');
-                doc.text(`ขั้นตอนที่ ${index + 1}: ${step.title}`, 16, yPos + 7);
-
-                // Status
+                const statusColor = step.completed ? '#10b981' : '#94a3b8';
                 const statusText = step.completed ? `เสร็จสิ้นเมื่อ ${new Date(step.completedAt).toLocaleDateString('th-TH')}` : 'ยังไม่ดำเนินการ';
-                doc.setTextColor(step.completed ? 16 : 100, step.completed ? 185 : 116, step.completed ? 129 : 139); // Green or Gray
-                doc.setFontSize(10);
-                doc.text(statusText, 190, yPos + 7, { align: 'right' });
 
-                yPos += 16;
+                html += `
+                    <div style="background: #f1f5f9; padding: 8px 14px; border-radius: 6px; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center;">
+                        <strong style="font-size: 14px;">ขั้นตอนที่ ${index + 1}: ${this.escapeHtml(step.title)}</strong>
+                        <span style="color: ${statusColor}; font-size: 12px;">${statusText}</span>
+                    </div>
+                `;
 
                 // Checklist
-                doc.setFont('Sarabun', 'normal');
-                doc.setTextColor(30, 41, 59);
-                step.checklist.forEach(item => {
-                    const checkMark = item.checked ? '[ / ]' : '[   ]';
-                    const itemText = `${checkMark} ${item.text}`;
+                if (step.checklist && step.checklist.length > 0) {
+                    step.checklist.forEach(item => {
+                        const icon = item.checked ? '☑' : '☐';
+                        const style = item.checked ? 'text-decoration: line-through; color: #94a3b8;' : '';
+                        html += `<div style="margin-left: 20px; margin-bottom: 2px; ${style}">${icon} ${this.escapeHtml(item.text)}</div>`;
+                    });
+                }
 
-                    const splitItem = doc.splitTextToSize(itemText, 170);
-                    doc.text(splitItem, 20, yPos);
-                    yPos += (splitItem.length * 6);
-                });
-
-                // Notes (Timeline & Postits)
+                // Timeline notes
                 const timeline = step.timeline || (Array.isArray(step.notes) ? step.notes.filter(n => !n.type || n.type === 'timeline') : []);
-                const postits = step.postits || (Array.isArray(step.notes) ? step.notes.filter(n => n.type === 'postit') : []);
-
                 if (timeline.length > 0) {
-                    yPos += 4;
-                    doc.setFontSize(10);
-                    doc.setTextColor(71, 85, 105); // Slate 600
-                    doc.setFont('Sarabun', 'bold');
-                    doc.text('บันทึกเหตุการณ์:', 20, yPos);
-                    yPos += 6;
-
-                    doc.setFont('Sarabun', 'normal');
+                    html += `<div style="margin-left: 20px; margin-top: 6px; font-weight: 700; color: #475569; font-size: 13px;">บันทึกเหตุการณ์:</div>`;
                     timeline.forEach(note => {
                         const timeStr = new Date(note.timestamp).toLocaleString('th-TH');
-                        const noteText = `${timeStr} - ${note.text}`;
-                        const splitNote = doc.splitTextToSize(noteText, 165);
-
-                        // Draw left border line
-                        doc.setDrawColor(99, 102, 241);
-                        doc.line(22, yPos - 4, 22, yPos - 4 + (splitNote.length * 6));
-
-                        doc.text(splitNote, 25, yPos);
-                        yPos += (splitNote.length * 6) + 2;
+                        html += `<div style="margin-left: 28px; border-left: 3px solid #6366f1; padding-left: 8px; margin-bottom: 4px; font-size: 13px;">${timeStr} — ${this.escapeHtml(note.text)}</div>`;
                     });
                 }
 
+                // Postits
+                const postits = step.postits || (Array.isArray(step.notes) ? step.notes.filter(n => n.type === 'postit') : []);
                 if (postits.length > 0) {
-                    yPos += 4;
-                    doc.setFontSize(10);
-                    doc.setTextColor(71, 85, 105);
-                    doc.setFont('Sarabun', 'bold');
-                    doc.text('กระดาษโน้ต:', 20, yPos);
-                    yPos += 6;
-
-                    doc.setFont('Sarabun', 'normal');
+                    html += `<div style="margin-left: 20px; margin-top: 6px; font-weight: 700; color: #475569; font-size: 13px;">กระดาษโน้ต:</div>`;
                     postits.forEach(note => {
-                        const splitNote = doc.splitTextToSize(note.text, 165);
-                        // Draw yellow background for postit look (optional, but keep simple for now)
-                        doc.text(splitNote, 25, yPos);
-                        yPos += (splitNote.length * 6) + 2;
+                        html += `<div style="margin-left: 28px; background: #fef9c3; color: #854d0e; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; font-size: 13px;">${this.escapeHtml(note.text)}</div>`;
                     });
                 }
 
-                yPos += 8; // Spacing between steps
+                html += `<div style="margin-bottom: 12px;"></div>`;
             });
 
-            // Footer
+            // --- Footer placeholder (will be added per-page later) ---
+            container.innerHTML = html;
+            document.body.appendChild(container);
+
+            // --- 2. Render to canvas with html2canvas ---
+            const canvas = await html2canvas(container, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+                logging: false
+            });
+
+            document.body.removeChild(container);
+
+            // --- 3. Build PDF from canvas ---
+            const { jsPDF } = window.jspdf;
+            const imgWidth = 210; // A4 width in mm
+            const pageHeight = 297; // A4 height in mm
+            const marginTop = 10;
+            const marginBottom = 15;
+            const contentHeight = pageHeight - marginTop - marginBottom;
+
+            const canvasWidth = canvas.width;
+            const canvasHeight = canvas.height;
+            const ratio = imgWidth / canvasWidth;
+            const totalPdfHeight = canvasHeight * ratio;
+
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            let heightLeft = totalPdfHeight;
+            let position = 0;
+            let page = 1;
+
+            // Slice and add pages
+            while (heightLeft > 0) {
+                if (page > 1) doc.addPage();
+
+                // Calculate source slice from canvas
+                const sliceHeight = Math.min(contentHeight / ratio, canvasHeight - position);
+                const sliceCanvas = document.createElement('canvas');
+                sliceCanvas.width = canvasWidth;
+                sliceCanvas.height = sliceHeight;
+                const ctx = sliceCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, position, canvasWidth, sliceHeight, 0, 0, canvasWidth, sliceHeight);
+
+                const sliceData = sliceCanvas.toDataURL('image/jpeg', 0.95);
+                const sliceRenderHeight = sliceHeight * ratio;
+
+                doc.addImage(sliceData, 'JPEG', 0, marginTop, imgWidth, sliceRenderHeight);
+
+                position += sliceHeight;
+                heightLeft -= contentHeight;
+                page++;
+            }
+
+            // --- 4. Add footer to all pages ---
             const pageCount = doc.getNumberOfPages();
             for (let i = 1; i <= pageCount; i++) {
                 doc.setPage(i);
-                doc.setFontSize(9);
+                doc.setFontSize(8);
                 doc.setTextColor(148, 163, 184);
-                doc.text(`Create by Procurement Tracker System - ${new Date().toLocaleString('th-TH')} - หน้า ${i}/${pageCount}`, 105, 290, { align: 'center' });
+                doc.text(`Procurement Tracker System - ${new Date().toLocaleString('th-TH')} - Page ${i}/${pageCount}`, 105, 292, { align: 'center' });
             }
 
             doc.save(`Project_Report_${project.name}.pdf`);
@@ -2024,8 +1994,14 @@ class App {
 
         } catch (error) {
             console.error('PDF Export Error:', error);
-            this.showToast('เกิดข้อผิดพลาดในการสร้าง PDF (ตรวจสอบอินเทอร์เน็ตเพื่อโหลดฟอนต์)', 'error');
+            this.showToast('เกิดข้อผิดพลาดในการสร้าง PDF: ' + error.message, 'error');
         }
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text || '';
+        return div.innerHTML;
     }
 }
 

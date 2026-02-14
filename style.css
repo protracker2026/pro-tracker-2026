@@ -571,7 +571,7 @@ body {
     }
 }
 
-/* Standardize Badges */
+/* Standardized Solid Badges */
 .priority-badge,
 .status-badge {
     display: inline-flex;
@@ -586,47 +586,37 @@ body {
     letter-spacing: 0.02em;
     white-space: nowrap;
     height: 28px;
-    /* Fixed height for symmetry */
     line-height: 1;
-    /* Reset line-height */
+    color: white !important;
+    /* Force White Text */
+    border: none !important;
+    /* Remove Borders */
     box-sizing: border-box;
-    /* Include padding in height */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Specific Style for Priority Badge */
-.priority-badge {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: var(--text-main);
-}
-
+/* Priority Colors (Solid) */
 .priority-normal {
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border: 1px solid rgba(16, 185, 129, 0.2);
+    background-color: #10b981;
 }
 
+/* Emerald-500 */
 .priority-urgent {
-    background-color: rgba(249, 115, 22, 0.15);
-    color: #f97316;
-    border: 1px solid rgba(249, 115, 22, 0.2);
+    background-color: #f97316;
 }
 
+/* Orange-500 */
 .priority-very-urgent {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border: 1px solid rgba(239, 68, 68, 0.2);
+    background-color: #ef4444;
 }
 
+/* Red-500 */
 .priority-most-urgent {
     background: linear-gradient(135deg, #b91c1c, #ef4444);
-    color: white;
-    border: none;
-    box-shadow: 0 2px 5px rgba(239, 68, 68, 0.3);
 }
 
 .priority-extreme {
     background: linear-gradient(135deg, #ff4d00, #ff0000);
-    color: white;
     font-weight: 800;
     animation: pulsate 1.5s infinite;
     border: 1px solid #ffaa00;
@@ -640,22 +630,21 @@ body {
     /* Fixed container height */
 }
 
+/* Status Colors (Solid) */
 .status-badge {
-    background-color: rgba(234, 179, 8, 0.15);
-    color: #eab308;
-    border: 1px solid rgba(234, 179, 8, 0.2);
+    background-color: #eab308;
+    /* Yellow-500 (Active/Doing) */
+    color: white !important;
 }
 
 .status-badge.status-urgent {
-    background-color: rgba(239, 68, 68, 0.15);
-    color: #ef4444;
-    border-color: rgba(239, 68, 68, 0.2);
+    background-color: #ef4444;
+    /* Red (Urgent Status) */
 }
 
 .status-badge.status-completed {
-    background-color: rgba(16, 185, 129, 0.15);
-    color: #10b981;
-    border-color: rgba(16, 185, 129, 0.2);
+    background-color: #10b981;
+    /* Green (Completed) */
 }
 
 .card-steps {

@@ -218,9 +218,8 @@
                     <div class="workflow-content">
                         <div class="step-header">
                             <h2 id="step-title">1. สำรวจความต้องการ</h2>
-                            <button class="btn" id="btn-complete-step">
-                                <i class="fa-regular fa-circle-check"></i> ทำขั้นตอนเสร็จสิ้น
-                            </button>
+                            <!-- Button removed as per request -->
+                            <div id="step-info-container"></div>
                         </div>
 
                         <div class="checklist-section">
@@ -248,7 +247,18 @@
                             <div class="collapsible-content">
                                 <div class="add-note-box">
                                     <textarea id="timeline-input" placeholder="พิมพ์เหตุการณ์ที่เกิดขึ้น..."></textarea>
-                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                        <div>
+                                            <input type="file" id="inp-timeline-file" style="display: none;"
+                                                accept="image/*,application/pdf">
+                                            <button id="btn-attach-timeline" class="btn btn-outline btn-sm"
+                                                title="แนบไฟล์ (รูปภาพ/PDF)">
+                                                <i class="fa-solid fa-paperclip"></i>
+                                            </button>
+                                            <span id="timeline-file-name"
+                                                style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;"></span>
+                                        </div>
                                         <button id="btn-add-timeline" class="btn btn-primary btn-sm">
                                             <i class="fa-solid fa-plus"></i> บันทึกเหตุการณ์
                                         </button>
@@ -274,7 +284,18 @@
                                 <div class="add-note-box">
                                     <textarea id="postit-input"
                                         placeholder="พิมพ์บันทึกย่อ / สิ่งที่ต้องจำ..."></textarea>
-                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem;">
+                                        <div>
+                                            <input type="file" id="inp-postit-file" style="display: none;"
+                                                accept="image/*,application/pdf">
+                                            <button id="btn-attach-postit" class="btn btn-outline btn-sm"
+                                                title="แนบไฟล์ (รูปภาพ/PDF)">
+                                                <i class="fa-solid fa-paperclip"></i>
+                                            </button>
+                                            <span id="postit-file-name"
+                                                style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;"></span>
+                                        </div>
                                         <button id="btn-add-postit" class="btn btn-warning btn-sm"
                                             style="color: white; background-color: #f59e0b;">
                                             <i class="fa-solid fa-thumbtack"></i> แปะโน้ต
@@ -568,6 +589,15 @@
     </div>
 
     <div id="toast-container"></div>
+
+    <!-- Lightbox Overlay -->
+    <div id="lightbox-overlay"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; flex-direction: column;">
+        <button id="lightbox-close"
+            style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 2rem; cursor: pointer;">&times;</button>
+        <img id="lightbox-img" src="" style="max-width: 90%; max-height: 90%; object-fit: contain;">
+        <div id="lightbox-caption" style="color: white; margin-top: 1rem; font-size: 1rem;"></div>
+    </div>
     <script type="module" src="app.js"></script>
 </body>
 

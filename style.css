@@ -2104,3 +2104,87 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     width: 20px;
     text-align: center;
 }
+
+/* Attachment Styles */
+.attachment-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.attachment-item {
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    transition: all 0.2s;
+}
+
+.attachment-item:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+
+.attachment-thumb {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    cursor: pointer;
+    display: block;
+}
+
+.attachment-pdf {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    padding: 4px;
+    text-align: center;
+}
+
+.attachment-pdf i {
+    font-size: 24px;
+    color: #ef4444;
+}
+
+.attachment-pdf span {
+    font-size: 10px;
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+}
+
+.attachment-delete {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.attachment-item:hover .attachment-delete {
+    opacity: 1;
+}
+
+.attachment-delete:hover {
+    background: #ef4444;
+}

@@ -204,6 +204,57 @@ class FirestoreManager {
     }
 }
 
+// --- File Storage Manager ---
+import { storage } from './firebase-config.js';
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+
+class FileUploadManager {
+    static validateFile(file) {
+        const maxSize = 5 * 1024 * 1024; // 5MB
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
+
+        if (file.size > maxSize) {
+            throw new Error('ขนาดไฟล์ต้องไม่เกิน 5MB');
+        }
+        if (!allowedTypes.includes(file.type)) {
+            throw new Error('รองรับเฉพาะไฟล์รูปภาพและ PDF เท่านั้น');
+        }
+        return true;
+    }
+
+    static async upload(file, path) {
+        this.validateFile(file);
+
+        // Add timestamp to filename to prevent duplicates
+        const timestamp = Date.now();
+        const safeName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
+        const fullPath = `${path}/${timestamp}_${safeName}`;
+        const storageRef = ref(storage, fullPath);
+
+        const snapshot = await uploadBytes(storageRef, file);
+        const url = await getDownloadURL(snapshot.ref);
+
+        return {
+            name: file.name,
+            type: file.type,
+            url: url,
+            path: fullPath, // Store path for deletion
+            uploadedAt: new Date().toISOString()
+        };
+    }
+
+    static async delete(fileInfo) {
+        if (!fileInfo || !fileInfo.path) return;
+        try {
+            const fileRef = ref(storage, fileInfo.path);
+            await deleteObject(fileRef);
+        } catch (error) {
+            console.error("Error deleting file:", error);
+            // Ignore error if file not found
+        }
+    }
+}
+
 // --- UI Logic ---
 
 class App {
@@ -287,17 +338,41 @@ class App {
         this.workflowTabs = document.getElementById('workflow-tabs');
         this.btnEditProjectWorkflow = document.getElementById('btn-edit-project-workflow');
         this.stepTitle = document.getElementById('step-title');
-        this.btnCompleteStep = document.getElementById('btn-complete-step');
+        this.stepInfoContainer = document.getElementById('step-info-container');
         this.checklistItems = document.getElementById('checklist-items');
         this.inpChecklist = document.getElementById('new-checklist-input');
         this.inpChecklistDeadline = document.getElementById('new-checklist-deadline');
         this.btnAddChecklist = document.getElementById('btn-add-checklist');
         this.inpTimeline = document.getElementById('timeline-input');
         this.btnAddTimeline = document.getElementById('btn-add-timeline');
+        this.inpTimelineFile = document.getElementById('inp-timeline-file');
+        this.btnAttachTimeline = document.getElementById('btn-attach-timeline');
+        this.timelineFileName = document.getElementById('timeline-file-name');
+
         this.timelineList = document.getElementById('timeline-list');
+
         this.inpPostit = document.getElementById('postit-input');
         this.btnAddPostit = document.getElementById('btn-add-postit');
+        this.inpPostitFile = document.getElementById('inp-postit-file');
+        this.btnAttachPostit = document.getElementById('btn-attach-postit');
+        this.postitFileName = document.getElementById('postit-file-name');
+
         this.postitsList = document.getElementById('postits-list');
+
+        // Lightbox
+        this.lightboxOverlay = document.getElementById('lightbox-overlay');
+        this.lightboxImg = document.getElementById('lightbox-img');
+        this.lightboxCaption = document.getElementById('lightbox-caption');
+        this.lightboxClose = document.getElementById('lightbox-close');
+
+        if (this.lightboxClose) {
+            this.lightboxClose.addEventListener('click', () => {
+                this.lightboxOverlay.style.display = 'none';
+            });
+            this.lightboxOverlay.addEventListener('click', (e) => {
+                if (e.target === this.lightboxOverlay) this.lightboxOverlay.style.display = 'none';
+            });
+        }
 
         // Collapsible headers & sections
         this.headerTimeline = document.getElementById('header-timeline');
@@ -495,6 +570,37 @@ class App {
             }
         });
 
+        // Attachment Buttons Logic
+        if (this.btnAttachTimeline && this.inpTimelineFile) {
+            this.btnAttachTimeline.addEventListener('click', () => this.inpTimelineFile.click());
+            this.inpTimelineFile.addEventListener('change', () => {
+                if (this.inpTimelineFile.files[0]) {
+                    this.timelineFileName.textContent = this.inpTimelineFile.files[0].name;
+                    this.btnAttachTimeline.classList.remove('btn-outline');
+                    this.btnAttachTimeline.classList.add('btn-primary');
+                } else {
+                    this.timelineFileName.textContent = '';
+                    this.btnAttachTimeline.classList.add('btn-outline');
+                    this.btnAttachTimeline.classList.remove('btn-primary');
+                }
+            });
+        }
+
+        if (this.btnAttachPostit && this.inpPostitFile) {
+            this.btnAttachPostit.addEventListener('click', () => this.inpPostitFile.click());
+            this.inpPostitFile.addEventListener('change', () => {
+                if (this.inpPostitFile.files[0]) {
+                    this.postitFileName.textContent = this.inpPostitFile.files[0].name;
+                    this.btnAttachPostit.classList.remove('btn-outline');
+                    this.btnAttachPostit.classList.add('btn-primary');
+                } else {
+                    this.postitFileName.textContent = '';
+                    this.btnAttachPostit.classList.add('btn-outline');
+                    this.btnAttachPostit.classList.remove('btn-primary');
+                }
+            });
+        }
+
         this.btnAddPostit.addEventListener('click', () => this.addPostit());
         this.inpPostit.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -503,8 +609,7 @@ class App {
             }
         });
 
-        this.btnCompleteStep.addEventListener('click', (e) => this.handleStepClick(e));
-        this.btnCompleteStep.addEventListener('dblclick', (e) => this.handleStepRevert(e));
+
 
         // Collapsible Sections
         if (this.headerTimeline) {
@@ -539,6 +644,22 @@ class App {
         inpDocSearch.addEventListener('focus', () => {
             if (inpDocSearch.value.trim() && docSearchResults.children.length > 0) {
                 docSearchResults.style.display = 'block';
+            }
+        });
+
+        inpDocSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Perform search immediately
+                clearTimeout(searchTimeout);
+                this.searchDocumentNumber(inpDocSearch.value.trim()).then(() => {
+                    // If exactly one result or we want to pick the first one automatically?
+                    // Let's just focus the first result if available or click it if it's the only one
+                    const firstItem = docSearchResults.querySelector('.doc-search-item');
+                    if (firstItem) {
+                        firstItem.click();
+                    }
+                });
             }
         });
     }
@@ -636,6 +757,11 @@ class App {
     }
 
     loadView(viewName) {
+        // Optimization: prevent re-render/scroll reset if already on this view
+        if (this.currentView === viewName && document.getElementById(`view-${viewName}`).classList.contains('active')) {
+            return;
+        }
+
         this.views.forEach(view => view.classList.remove('active'));
 
         const targetSection = document.getElementById(`view-${viewName}`);
@@ -1030,10 +1156,15 @@ class App {
                 this.loadWorkflowStep(index);
             });
 
-            tab.addEventListener('dblclick', async (e) => {
+            tab.addEventListener('dblclick', (e) => {
                 e.preventDefault();
                 this.activeWorkflowStepIndex = index;
-                await this.handleStepRevert(e);
+                // Double click now opens the modal instead of quick complete/revert
+                if (step.completed) {
+                    this.openStepCompletionModal('edit');
+                } else {
+                    this.openStepCompletionModal('complete');
+                }
             });
 
             tab.addEventListener('mouseenter', (e) => {
@@ -1049,6 +1180,7 @@ class App {
     }
 
     loadWorkflowStep(index) {
+        const isSameStep = (this.activeWorkflowStepIndex === index);
         this.activeWorkflowStepIndex = index;
         const stepData = this.activeProject.steps[index];
 
@@ -1060,9 +1192,11 @@ class App {
         // Render Content
         this.stepTitle.textContent = `${index + 1}. ${stepData.title}`;
 
-        // Collapse sections when changing steps
-        if (this.sectionTimeline) this.sectionTimeline.classList.remove('active');
-        if (this.sectionPostits) this.sectionPostits.classList.remove('active');
+        // Collapse sections ONLY when changing steps
+        if (!isSameStep) {
+            if (this.sectionTimeline) this.sectionTimeline.classList.remove('active');
+            if (this.sectionPostits) this.sectionPostits.classList.remove('active');
+        }
 
         // Migrate old logic
         if (typeof stepData.notes === 'string') {
@@ -1081,45 +1215,36 @@ class App {
         this.renderTimeline();
         this.renderPostits();
 
-        // Button Logic
-        if (stepData.completed) {
-            this.btnCompleteStep.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล (Double-click ยกเลิก)';
-            this.btnCompleteStep.classList.remove('btn-primary', 'btn-action-complete');
-            this.btnCompleteStep.classList.add('btn-outline');
+        // Completion Info Logic (Button removed)
+        if (this.stepInfoContainer) {
+            if (stepData.completed) {
+                const dateStr = stepData.completedAt ? this._formatDDMMYYYY(new Date(stepData.completedAt)) : '-';
+                const docNum = stepData.documentNumber || '-';
+                const docDateStr = stepData.documentDate || '-';
 
-            // Show completion info
-            let infoEl = document.getElementById('step-completion-info');
-            if (!infoEl) {
-                infoEl = document.createElement('div');
-                infoEl.id = 'step-completion-info';
-                this.btnCompleteStep.parentNode.insertBefore(infoEl, this.btnCompleteStep.nextSibling);
+                this.stepInfoContainer.innerHTML = `
+                    <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
+                        <div><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
+                        <div style="margin-top: 4px;"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> ลงวันที่: <strong>${docDateStr}</strong></div>
+                        <div style="margin-top: 4px;"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> วันที่เสร็จสิ้น/อนุมัติ: <strong>${dateStr}</strong></div>
+                        <div style="margin-top: 6px; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline;" onclick="document.dispatchEvent(new CustomEvent('edit-step-info'))">
+                           <i class="fa-solid fa-pen"></i> แก้ไขข้อมูล (Double-click tab)
+                        </div>
+                    </div>
+                `;
+
+                // Add click handler for the edit link manually if needed, or rely on double-click tab
+                const editLink = this.stepInfoContainer.querySelector('div[onclick]');
+                if (editLink) {
+                    editLink.onclick = (e) => {
+                        e.stopPropagation();
+                        this.openStepCompletionModal('edit');
+                    };
+                }
+
+            } else {
+                this.stepInfoContainer.innerHTML = '';
             }
-            const dateStr = stepData.completedAt ? this._formatDDMMYYYY(new Date(stepData.completedAt)) : '-';
-            const docNum = stepData.documentNumber || '-';
-            const docDateStr = stepData.documentDate || '-';
-            infoEl.innerHTML = `
-                <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
-                    <div style="margin-top: 4px;"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> ลงวันที่: <strong>${docDateStr}</strong></div>
-                    <div style="margin-top: 4px;"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> วันที่เสร็จสิ้น/อนุมัติ: <strong>${dateStr}</strong></div>
-                </div>
-            `;
-        } else {
-            this.btnCompleteStep.innerHTML = '<i class="fa-regular fa-circle-check"></i> ทำขั้นตอนเสร็จสิ้น';
-
-            // Default state
-            this.btnCompleteStep.classList.remove('btn-primary', 'btn-action-complete');
-            this.btnCompleteStep.classList.add('btn-outline');
-
-            // Highlight if it's the current active step
-            if (index === this.activeProject.currentStepIndex) {
-                this.btnCompleteStep.classList.remove('btn-outline');
-                this.btnCompleteStep.classList.add('btn-action-complete');
-            }
-
-            // Remove completion info if reverting
-            const infoEl = document.getElementById('step-completion-info');
-            if (infoEl) infoEl.remove();
         }
 
         // Render Checklist
@@ -1163,9 +1288,12 @@ class App {
                                 <span class="info-badge" style="background:none; padding:0; font-size:0.65rem;">
                                     <i class="fa-regular fa-clock"></i> ${new Date(n.timestamp).toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                 </span>
-                                <button class="btn-delete-item-note" data-index="${ni}" title="ลบบันทึก"><i class="fa-solid fa-xmark"></i></button>
+                                <div style="display:flex; gap:0.25rem;">
+                                   <button class="btn-delete-item-note" data-i="${index}" data-ni="${ni}" title="ลบบันทึก"><i class="fa-solid fa-xmark"></i></button>
+                                </div>
                             </div>
                             <div class="item-note-text">${n.text}</div>
+                            ${n.attachments ? `<div class="item-note-attachments" data-i="${index}" data-ni="${ni}"></div>` : ''}
                         </div>
                     `).join('')}
                 </div>
@@ -1185,10 +1313,13 @@ class App {
                 </div>
                 ${itemNotesHtml}
                 <div class="add-item-note-box" style="display:none; margin-top: 0.5rem;">
-                    <div style="display:flex; gap: 0.25rem;">
+                    <div style="display:flex; gap: 0.25rem; align-items:center;">
                         <input type="text" class="inp-item-note" placeholder="พิมพ์บันทึก..." style="flex:1; font-size:0.85rem; padding: 0.3rem 0.6rem;">
+                        <input type="file" class="inp-item-note-file" style="display:none;" accept="image/*,application/pdf">
+                        <button class="btn-item-note-attach btn-outline" style="padding: 0.2rem 0.5rem;" title="แนบไฟล์"><i class="fa-solid fa-paperclip"></i></button>
                         <button class="btn-save-item-note btn-primary" style="padding: 0.2rem 0.5rem;"><i class="fa-solid fa-plus"></i></button>
                     </div>
+                    <div class="item-note-file-name" style="font-size:0.75rem; color:var(--text-muted); margin-top:2px;"></div>
                 </div>
             </div>
             <div class="checklist-date" title="วันที่เสร็จสิ้น">${dateDisplay || (item.checked ? 'ระบุวันที่' : '')}</div>
@@ -1201,6 +1332,41 @@ class App {
         const addNoteBox = li.querySelector('.add-item-note-box');
         const saveNoteBtn = li.querySelector('.btn-save-item-note');
         const inpItemNote = li.querySelector('.inp-item-note');
+        const inpItemFile = li.querySelector('.inp-item-note-file');
+        const btnItemAttach = li.querySelector('.btn-item-note-attach');
+        const fileNameDisplay = li.querySelector('.item-note-file-name');
+
+        // Render Attachments for existing notes
+        li.querySelectorAll('.item-note-attachments').forEach(container => {
+            const i = parseInt(container.dataset.i);
+            const ni = parseInt(container.dataset.ni);
+            const note = item.notes[ni];
+            if (note && note.attachments) {
+                const attachEls = this.renderAttachments(note.attachments, 'checklist', true, note, item.notes);
+                container.appendChild(attachEls);
+            }
+        });
+
+        // Attach Button Logic
+        btnItemAttach.addEventListener('click', (e) => {
+            e.stopPropagation();
+            inpItemFile.click();
+        });
+
+        inpItemFile.addEventListener('change', (e) => {
+            e.stopPropagation();
+            if (inpItemFile.files[0]) {
+                fileNameDisplay.textContent = inpItemFile.files[0].name;
+                btnItemAttach.classList.add('btn-primary');
+                btnItemAttach.classList.remove('btn-outline');
+            } else {
+                fileNameDisplay.textContent = '';
+                btnItemAttach.classList.remove('btn-primary');
+                btnItemAttach.classList.add('btn-outline');
+            }
+        });
+
+        inpItemFile.addEventListener('click', (e) => e.stopPropagation());
 
         // Note Toggle
         noteToggleBtn.addEventListener('click', (e) => {
@@ -1213,11 +1379,27 @@ class App {
         // Save Item Note
         const saveItemNote = async () => {
             const val = inpItemNote.value.trim();
-            if (!val) return;
+            const file = inpItemFile.files[0];
+
+            if (!val && !file) return;
+
+            let attachments = [];
+            if (file) {
+                try {
+                    this.showToast('กำลังอัปโหลด...', 'info');
+                    const fileData = await FileUploadManager.upload(file, `projects/${this.activeProject.id}/checklist_notes`);
+                    attachments.push(fileData);
+                } catch (e) {
+                    this.showToast('Upload Error: ' + e.message, 'error');
+                    return;
+                }
+            }
+
             if (!item.notes) item.notes = [];
             item.notes.push({
                 text: val,
-                timestamp: new Date().toISOString()
+                timestamp: new Date().toISOString(),
+                attachments: attachments
             });
             await FirestoreManager.updateProject(this.activeProject);
             this.loadWorkflowStep(this.activeWorkflowStepIndex);
@@ -1427,7 +1609,10 @@ class App {
             let docDateStr = this._formatDDMMYYYY(new Date());
             let completeDateStr = '';
 
-            if (mode === 'edit') {
+            // Check for existing data (Edit mode OR saved draft)
+            const hasData = step.documentNumber || step.documentDate || step.completed;
+
+            if (mode === 'edit' || hasData) {
                 const fullDocNum = step.documentNumber || '';
                 // Check if starts with prefix (simple check)
                 const prefix = inpPrefix.value;
@@ -1440,7 +1625,11 @@ class App {
                 if (step.documentDate) docDateStr = step.documentDate;
                 if (step.completedAt) completeDateStr = this._formatDDMMYYYY(new Date(step.completedAt));
 
-                btnConfirm.innerHTML = '<i class="fa-solid fa-save"></i> บันทึกการแก้ไข';
+                if (mode === 'edit') {
+                    btnConfirm.innerHTML = '<i class="fa-solid fa-save"></i> บันทึกการแก้ไข';
+                } else {
+                    btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น';
+                }
             } else {
                 btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น';
             }
@@ -2020,6 +2209,7 @@ class App {
                     </div>
                 </div>
                 <div class="note-content-display">${note.text}</div>
+                <div class="attachment-container"></div>
                 <div class="note-edit-box" style="display:none;">
                     <textarea class="note-edit-area">${note.text}</textarea>
                     <div class="note-edit-actions">
@@ -2030,8 +2220,15 @@ class App {
             `;
 
             const display = div.querySelector('.note-content-display');
+            const attachContainer = div.querySelector('.attachment-container');
             const editBox = div.querySelector('.note-edit-box');
             const textarea = div.querySelector('.note-edit-area');
+
+            // Render attachments
+            if (note.attachments && note.attachments.length > 0) {
+                const attachEls = this.renderAttachments(note.attachments, 'timeline', true, note, timeline);
+                attachContainer.appendChild(attachEls);
+            }
 
             // Toggle Edit
             div.querySelector('.btn-note-edit').addEventListener('click', () => {
@@ -2099,6 +2296,7 @@ class App {
                     </div>
                 </div>
                 <div class="note-content-display" style="white-space: pre-wrap;">${note.text}</div>
+                <div class="attachment-container"></div>
                 <div class="note-edit-box" style="display:none;">
                     <textarea class="note-edit-area" style="height:80%;">${note.text}</textarea>
                     <div class="note-edit-actions">
@@ -2109,8 +2307,15 @@ class App {
             `;
 
             const display = div.querySelector('.note-content-display');
+            const attachContainer = div.querySelector('.attachment-container');
             const editBox = div.querySelector('.note-edit-box');
             const textarea = div.querySelector('.note-edit-area');
+
+            // Render attachments
+            if (note.attachments && note.attachments.length > 0) {
+                const attachEls = this.renderAttachments(note.attachments, 'postit', true, note, postits);
+                attachContainer.appendChild(attachEls);
+            }
 
             // Toggle Edit
             div.querySelector('.btn-note-edit').addEventListener('click', () => {
@@ -2150,21 +2355,111 @@ class App {
         });
     }
 
+    // Helper to render attachments
+    renderAttachments(attachments, containerId, canDelete = true, parentNote = null, parentArray = null) {
+        if (!attachments || attachments.length === 0) return '';
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'attachment-list';
+
+        attachments.forEach((file, idx) => {
+            const item = document.createElement('div');
+            item.className = 'attachment-item';
+
+            if (file.type.startsWith('image/')) {
+                item.innerHTML = `
+                    <img src="${file.url}" class="attachment-thumb" title="${file.name}">
+                `;
+                item.querySelector('img').onclick = () => this.openLightbox(file.url, file.name);
+            } else {
+                item.innerHTML = `
+                   <div class="attachment-pdf" title="${file.name}">
+                        <i class="fa-solid fa-file-pdf"></i>
+                        <span>${file.name}</span>
+                   </div>
+                `;
+                item.onclick = (e) => {
+                    if (!e.target.closest('.attachment-delete')) {
+                        window.open(file.url, '_blank');
+                    }
+                };
+            }
+
+            if (canDelete) {
+                const delBtn = document.createElement('button');
+                delBtn.className = 'attachment-delete';
+                delBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                delBtn.onclick = async (e) => {
+                    e.stopPropagation();
+                    if (confirm(`ลบไฟล์แนบ ${file.name}?`)) {
+                        await FileUploadManager.delete(file);
+                        attachments.splice(idx, 1);
+                        await FirestoreManager.updateProject(this.activeProject);
+
+                        // Re-render
+                        if (parentNote && parentArray) {
+                            // Logic handled by caller usually, but here we might prefer full re-render
+                            if (containerId === 'timeline') this.renderTimeline();
+                            else if (containerId === 'postit') this.renderPostits();
+                        }
+                    }
+                };
+                item.appendChild(delBtn);
+            }
+
+            wrapper.appendChild(item);
+        });
+
+        return wrapper;
+    }
+
+    openLightbox(src, caption) {
+        if (!this.lightboxOverlay) return;
+        this.lightboxImg.src = src;
+        this.lightboxCaption.textContent = caption || '';
+        this.lightboxOverlay.style.display = 'flex';
+    }
+
     async addTimelineEntry() {
         if (!this.activeProject) return;
         const text = this.inpTimeline.value.trim();
-        if (!text) return;
+        // Allow empty text if there is a file? Or require text? Let's require text for now or file.
+        const file = this.inpTimelineFile && this.inpTimelineFile.files[0];
+
+        if (!text && !file) return;
+
+        let attachments = [];
+        if (file) {
+            try {
+                this.showToast('กำลังอัปโหลดไฟล์...', 'info');
+                const fileData = await FileUploadManager.upload(file, `projects/${this.activeProject.id}/timeline`);
+                attachments.push(fileData);
+            } catch (e) {
+                this.showToast('Upload Error: ' + e.message, 'error');
+                return;
+            }
+        }
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.timeline) currentStep.timeline = [];
 
         currentStep.timeline.push({
             text,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            attachments: attachments
         });
 
         await FirestoreManager.updateProject(this.activeProject);
         this.inpTimeline.value = '';
+
+        // Reset file input
+        if (this.inpTimelineFile) {
+            this.inpTimelineFile.value = '';
+            this.timelineFileName.textContent = '';
+            this.btnAttachTimeline.classList.add('btn-outline');
+            this.btnAttachTimeline.classList.remove('btn-primary');
+        }
+
         if (this.sectionTimeline) this.sectionTimeline.classList.add('active');
         this.renderTimeline();
         this.showToast('เพิ่มบันทึกเหตุการณ์แล้ว', 'success');
@@ -2173,18 +2468,42 @@ class App {
     async addPostit() {
         if (!this.activeProject) return;
         const text = this.inpPostit.value.trim();
-        if (!text) return;
+        const file = this.inpPostitFile && this.inpPostitFile.files[0];
+
+        if (!text && !file) return;
+
+        let attachments = [];
+        if (file) {
+            try {
+                this.showToast('กำลังอัปโหลดไฟล์...', 'info');
+                const fileData = await FileUploadManager.upload(file, `projects/${this.activeProject.id}/postits`);
+                attachments.push(fileData);
+            } catch (e) {
+                this.showToast('Upload Error: ' + e.message, 'error');
+                return;
+            }
+        }
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.postits) currentStep.postits = [];
 
         currentStep.postits.push({
             text,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            attachments: attachments
         });
 
         await FirestoreManager.updateProject(this.activeProject);
         this.inpPostit.value = '';
+
+        // Reset file input
+        if (this.inpPostitFile) {
+            this.inpPostitFile.value = '';
+            this.postitFileName.textContent = '';
+            this.btnAttachPostit.classList.add('btn-outline');
+            this.btnAttachPostit.classList.remove('btn-primary');
+        }
+
         if (this.sectionPostits) this.sectionPostits.classList.add('active');
         this.renderPostits();
         this.showToast('แปะโน้ตเรียบร้อยแล้ว', 'success');
@@ -2268,15 +2587,23 @@ class App {
                     </div>
                 `;
 
-                // Document Number & Date
-                if (step.completed && (step.documentNumber || step.documentDate)) {
-                    let info = '';
-                    if (step.documentNumber) info += `เลขหนังสือ: ${this.escapeHtml(step.documentNumber)}`;
-                    if (step.documentDate) {
-                        if (info) info += ' &nbsp;|&nbsp; ';
-                        info += `ลงวันที่: ${new Date(step.documentDate).toLocaleDateString('th-TH')}`;
-                    }
-                    html += `<div style="margin-left: 14px; margin-bottom: 6px; font-size: 13px; color: #475569;"><i>${info}</i></div>`;
+                // Document Number & Date & Completion Info
+                if (step.documentNumber || step.documentDate || step.completedAt) {
+                    const docNum = step.documentNumber || '-';
+                    const docDate = step.documentDate || '-';
+                    const completedDate = step.completedAt ? new Date(step.completedAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
+
+                    html += `
+                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; padding: 8px 12px; margin: 4px 0 12px 14px; font-size: 13px;">
+                            <table style="width: 100%; border-collapse: collapse;">
+                                <tr>
+                                    <td style="width: 35%; color: #475569;"><strong>เลขที่หนังสือ:</strong> ${this.escapeHtml(docNum)}</td>
+                                    <td style="width: 30%; color: #475569;"><strong>ลงวันที่:</strong> ${this.escapeHtml(docDate)}</td>
+                                    <td style="width: 35%; color: #10b981;"><strong>วันที่สำเร็จ/อนุมัติ:</strong> ${completedDate}</td>
+                                </tr>
+                            </table>
+                        </div>
+                    `;
                 }
 
                 // Checklist

@@ -61,6 +61,7 @@ class Project {
         this.priority = priority;
         this.purchaseType = purchaseType;
         this.createdAt = new Date().toISOString();
+        this.updatedAt = this.createdAt;
         this.status = 'active'; // active, completed
         this.currentStepIndex = 0; // 0-based index (0 = Step 1)
 
@@ -161,6 +162,7 @@ class FirestoreManager {
 
     static async addProject(project) {
         const projects = await this.getProjects();
+        project.updatedAt = new Date().toISOString();
         projects.unshift(project); // Add to top
         await this.saveWorkspace({ projects });
         return projects;
@@ -170,6 +172,7 @@ class FirestoreManager {
         const projects = await this.getProjects();
         const index = projects.findIndex(p => p.id === updatedProject.id);
         if (index !== -1) {
+            updatedProject.updatedAt = new Date().toISOString();
             projects[index] = updatedProject;
             await this.saveWorkspace({ projects });
         }
@@ -627,7 +630,13 @@ class App {
         this.statUrgent.textContent = urgent;
 
         this.activityList.innerHTML = '';
-        const recentProjects = projects.slice(0, 5);
+        // Sort by updatedAt descending
+        const sortedForActivity = [...projects].sort((a, b) => {
+            const dateA = new Date(a.updatedAt || a.createdAt);
+            const dateB = new Date(b.updatedAt || b.createdAt);
+            return dateB - dateA;
+        });
+        const recentProjects = sortedForActivity.slice(0, 5);
 
         if (recentProjects.length === 0) {
             this.activityList.innerHTML = '<div class="empty-state-small">ยังไม่มีกิจกรรม</div>';

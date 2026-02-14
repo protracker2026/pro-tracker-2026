@@ -846,12 +846,38 @@ body {
     font-size: 0.95rem;
     transition: all 0.2s;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    font-family: inherit;
+}
+
+.add-checklist-item input[type="datetime-local"] {
+    flex: none;
+    width: auto;
+    color-scheme: dark;
+    cursor: pointer;
+}
+
+/* Fix calendar icon color */
+.add-checklist-item input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.6;
+    cursor: pointer;
+}
+
+.add-checklist-item input[type="datetime-local"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
 }
 
 .add-checklist-item input:hover {
     border-color: rgba(255, 255, 255, 0.5);
     background-color: rgba(255, 255, 255, 0.12);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.add-checklist-item input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.25);
+    box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.2);
 }
 
 .add-checklist-item input::placeholder {

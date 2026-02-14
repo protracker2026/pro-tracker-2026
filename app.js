@@ -669,11 +669,24 @@ class App {
         });
     }
 
-    async uploadAttachments(type) {
+    async uploadAttachments(type, buttonEl = null) {
         const items = this.tempAttachments[type];
         if (!items || items.length === 0) return [];
 
+        if (!this.activeProject) {
+            alert("ไม่สามารถอัปโหลดได้เนื่องจากไม่พบข้อมูลโครงการ");
+            return [];
+        }
+
+        const originalBtnHtml = buttonEl ? buttonEl.innerHTML : '';
+        if (buttonEl) {
+            buttonEl.disabled = true;
+            buttonEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> กำลังอัปโหลด...';
+        }
+
         const urls = [];
+        let hasError = false;
+
         for (const item of items) {
             try {
                 const fileName = `${Date.now()}_${item.file.name}`;
@@ -687,10 +700,18 @@ class App {
                 });
             } catch (err) {
                 console.error("Upload failed:", err);
+                alert(`อัปโหลดไฟล์ ${item.file.name} ไม่สำเร็จ: ${err.message}`);
+                hasError = true;
             }
         }
 
-        // Clear temp
+        if (buttonEl) {
+            buttonEl.disabled = false;
+            buttonEl.innerHTML = originalBtnHtml;
+        }
+
+        // Only clear if no critical error that stopped the whole process, 
+        // or just clear anyway to reset UI if some succeeded
         this.tempAttachments[type] = [];
         const previewId = `${type}-upload-preview`;
         const preview = document.getElementById(previewId);
@@ -1356,8 +1377,8 @@ class App {
         const deadline = this.inpChecklistDeadline.value;
         if (!text && this.tempAttachments.checklist.length === 0) return;
 
-        // Upload attachments first
-        const attachments = await this.uploadAttachments('checklist');
+        // Pass the button element to show loading state
+        const attachments = await this.uploadAttachments('checklist', this.btnAddChecklist);
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         currentStep.checklist.push({
@@ -1905,7 +1926,7 @@ class App {
         const text = this.inpTimeline.value.trim();
         if (!text && this.tempAttachments.timeline.length === 0) return;
 
-        const attachments = await this.uploadAttachments('timeline');
+        const attachments = await this.uploadAttachments('timeline', this.btnAddTimeline);
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.timeline) currentStep.timeline = [];
@@ -1927,7 +1948,7 @@ class App {
         const text = this.inpPostit.value.trim();
         if (!text && this.tempAttachments.postit.length === 0) return;
 
-        const attachments = await this.uploadAttachments('postit');
+        const attachments = await this.uploadAttachments('postit', this.btnAddPostit);
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.postits) currentStep.postits = [];

@@ -1495,11 +1495,11 @@ class App {
                     </div>
                 </div>
                 <div class="note-content-display" style="white-space: pre-wrap;">${note.text}</div>
-                <div class="note-edit-box" style="display:none; flex:1;">
-                    <textarea class="note-edit-area" style="background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); height:80%;">${note.text}</textarea>
+                <div class="note-edit-box" style="display:none;">
+                    <textarea class="note-edit-area" style="height:80%;">${note.text}</textarea>
                     <div class="note-edit-actions">
-                        <button class="btn btn-sm btn-cancel-edit" style="background:none; border:none; padding: 2px 5px; font-size: 0.75rem;">X</button>
-                        <button class="btn btn-sm btn-save-edit" style="background:rgba(0,0,0,0.1); border:none; padding: 2px 8px; font-size: 0.75rem;">บันทึก</button>
+                        <button class="btn btn-sm btn-cancel-edit">X</button>
+                        <button class="btn btn-sm btn-save-edit" style="background:rgba(0,0,0,0.1);">บันทึก</button>
                     </div>
                 </div>
             `;

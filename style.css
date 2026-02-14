@@ -1134,6 +1134,22 @@ body {
     color: #ef4444;
 }
 
+.notes-list.grid .note-edit-area {
+    color: #1a1a1a;
+    background: rgba(255, 255, 255, 0.5);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.notes-list.grid .note-edit-box {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.notes-list.grid .note-edit-actions .btn {
+    color: #1a1a1a;
+}
+
 .notes-list.grid .deadline-badge {
     background: rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(0, 0, 0, 0.1);

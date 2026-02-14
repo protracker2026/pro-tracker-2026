@@ -1325,10 +1325,34 @@ class App {
         const stepIndex = this.activeWorkflowStepIndex;
         const step = this.activeProject.steps[stepIndex];
 
+        if (this.clickTimeout) clearTimeout(this.clickTimeout);
+
         if (step.completed) {
-            if (this.clickTimeout) clearTimeout(this.clickTimeout);
             await this.revertStepCompletion();
+        } else {
+            await this.quickCompleteStep();
         }
+    }
+
+    async quickCompleteStep() {
+        if (!this.activeProject) return;
+        const stepIndex = this.activeWorkflowStepIndex;
+        const step = this.activeProject.steps[stepIndex];
+
+        step.completed = true;
+
+        // Quick complete defaults
+        if (this.activeProject.docNumberPrefix) {
+            step.documentNumber = this.activeProject.docNumberPrefix;
+        } else {
+            step.documentNumber = null;
+        }
+
+        step.documentDate = this._formatDDMMYYYY(new Date());
+        step.completedAt = new Date().toISOString();
+
+        this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
+        await this._saveAndRefreshStep(stepIndex);
     }
 
     async revertStepCompletion() {
@@ -1386,6 +1410,7 @@ class App {
                 const fullDocNum = step.documentNumber || '';
                 if (fullDocNum.startsWith(prefix) && prefix.length > 0) {
                     inpSuffix.value = fullDocNum.substring(prefix.length);
+                } else {
                     inpSuffix.value = fullDocNum;
                     inpPrefix.value = ''; // clear prefix if mismatch to avoid duplication
                 }

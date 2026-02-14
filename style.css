@@ -756,11 +756,12 @@ body {
 }
 
 .workflow-content {
-    background-color: var(--bg-card);
-    border: 1px solid var(--border-color);
+    background: linear-gradient(145deg, #1c2128 0%, #161b22 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-md);
     padding: 2rem;
     animation: fadeIn 0.3s;
+    box-shadow: var(--shadow-lg), 0 0 40px rgba(0, 0, 0, 0.2);
 }
 
 .step-header {
@@ -800,12 +801,20 @@ body {
 
 .add-checklist-item input {
     flex: 1;
-    background-color: var(--bg-card);
+    background-color: rgba(0, 0, 0, 0.2);
     border: 1px solid var(--border-color);
-    padding: 0.4rem 0.75rem;
-    border-radius: 4px;
+    padding: 0.6rem 0.85rem;
+    border-radius: 8px;
     color: var(--text-main);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.add-checklist-item input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
 }
 
 .checklist-items {
@@ -818,18 +827,23 @@ body {
 .checklist-item {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.2rem 0.5rem;
-    background-color: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 4px;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-left: 3px solid transparent;
+    border-radius: 8px;
     transition: all 0.2s;
-    min-height: 32px;
+    min-height: 48px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .checklist-item:hover {
-    background-color: rgba(255, 255, 255, 0.06);
-    border-color: rgba(249, 115, 22, 0.4);
+    background-color: rgba(255, 255, 255, 0.08);
+    border-color: rgba(249, 115, 22, 0.3);
+    border-left-color: var(--primary-color);
+    transform: translateX(4px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .checklist-item input[type="checkbox"] {

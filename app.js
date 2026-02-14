@@ -1876,9 +1876,16 @@ class App {
                 ['กำหนดเสร็จ (Deadline)', project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'],
                 ['สถานะปัจจุบัน', project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ']
             ];
-            infoItems.forEach(([label, value]) => {
-                html += `<div style="margin-left: 10px; margin-bottom: 2px;"><strong>${label}:</strong> ${value}</div>`;
+            html += `<table style="width: 100%; border-collapse: collapse; margin-bottom: 16px; font-size: 14px;">`;
+            infoItems.forEach(([label, value], i) => {
+                const bgColor = i % 2 === 0 ? '#f8fafc' : '#ffffff';
+                html += `
+                    <tr style="background: ${bgColor};">
+                        <td style="padding: 7px 12px; font-weight: 600; color: #475569; width: 200px; border: 1px solid #e2e8f0; white-space: nowrap;">${label}</td>
+                        <td style="padding: 7px 12px; color: #1e293b; border: 1px solid #e2e8f0;">${value}</td>
+                    </tr>`;
             });
+            html += `</table>`;
 
             // --- Workflow ---
             html += `<div style="font-size: 17px; font-weight: 700; color: #4f46e5; margin: 20px 0 10px;">ประวัติการดำเนินงาน (Workflow & Notes)</div>`;

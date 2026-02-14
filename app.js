@@ -52,13 +52,14 @@ const PRIORITY_LABELS = {
 };
 
 class Project {
-    constructor(name, description, budget, deadline, priority = 'normal', template = STEPS_TEMPLATE) {
+    constructor(name, description, budget, deadline, priority = 'normal', purchaseType = 'buy', template = STEPS_TEMPLATE) {
         this.id = Date.now().toString(); // Simple ID generation
         this.name = name;
         this.description = description;
         this.budget = parseFloat(budget) || 0;
         this.deadline = deadline || null;
         this.priority = priority;
+        this.purchaseType = purchaseType;
         this.createdAt = new Date().toISOString();
         this.status = 'active'; // active, completed
         this.currentStepIndex = 0; // 0-based index (0 = Step 1)
@@ -264,6 +265,7 @@ class App {
         this.detailDeadline = document.getElementById('detail-deadline');
         this.detailBudget = document.getElementById('detail-budget');
         this.detailPriority = document.getElementById('detail-priority'); // Add this to HTML later or use a span
+        this.detailPurchaseType = document.getElementById('detail-purchase-type');
         this.detailOverallProgress = document.getElementById('detail-overall-progress');
         this.detailProgressPercent = document.getElementById('detail-progress-percent');
 
@@ -410,6 +412,13 @@ class App {
                 this.editProjectDesc.value = p.description || '';
                 this.editProjectBudget.value = p.budget || '';
                 this.editProjectPriority.value = p.priority || 'normal';
+
+                // Populate Purchase Type
+                const editTypeSelect = document.getElementById('edit-project-type');
+                if (editTypeSelect) {
+                    editTypeSelect.value = p.purchaseType || 'buy';
+                }
+
                 this.editProjectDeadline.value = p.deadline || '';
                 this.modalEditProject.classList.add('open');
             });
@@ -426,6 +435,7 @@ class App {
                     description: this.editProjectDesc.value.trim(),
                     budget: parseFloat(this.editProjectBudget.value) || 0,
                     priority: this.editProjectPriority.value,
+                    purchaseType: document.getElementById('edit-project-type').value,
                     deadline: this.editProjectDeadline.value
                 };
 
@@ -576,6 +586,7 @@ class App {
         const name = this.inpProjectName.value.trim();
         const desc = this.inpProjectDesc.value.trim();
         const priority = this.inpProjectPriority ? this.inpProjectPriority.value : 'normal';
+        const purchaseType = document.getElementById('inp-project-type').value || 'buy';
 
         let budgetRaw = this.inpProjectBudget.value;
         budgetRaw = budgetRaw.replace(/,/g, '');
@@ -583,7 +594,7 @@ class App {
 
         const deadline = this.inpProjectDeadline.value;
 
-        const newProject = new Project(name, desc, budget, deadline, priority, this.stepsTemplate);
+        const newProject = new Project(name, desc, budget, deadline, priority, purchaseType, this.stepsTemplate);
         await FirestoreManager.addProject(newProject);
 
         this.modalCreate.classList.remove('open');
@@ -711,6 +722,25 @@ class App {
 
             const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
 
+            // Purchase Type Badge
+            const purchaseTypeLabels = {
+                'buy': { label: 'ซื้อ', class: 'priority-normal', icon: 'fa-solid fa-cart-shopping' }, // Reuse normal class (green/teal) or custom
+                'hire': { label: 'จ้าง', class: 'priority-urgent', icon: 'fa-solid fa-briefcase' }, // Reuse urgent (orange)
+                'rent': { label: 'เช่า', class: 'priority-most-urgent', icon: 'fa-solid fa-file-contract' } // Reuse most-urgent (red-ish)
+            };
+            // Note: Reuse existing classes for simplicity or add new ones in CSS
+            // Let's use inline styles for distinct colors to avoid confusion with priority
+            const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
+
+            let pTypeColor = '#3b82f6'; // Blue for Buy
+            if (p.purchaseType === 'hire') pTypeColor = '#10b981'; // Green for Hire
+            if (p.purchaseType === 'rent') pTypeColor = '#f59e0b'; // Orange for Rent
+
+            const purchaseTypeBadge = `
+                <span class="priority-badge" style="background: ${pTypeColor}; color: white; margin-right: 0.5rem;">
+                    <i class="${pType.icon}"></i> ${pType.label}
+                </span>`;
+
             // Dynamic logic for Latest Completed and Current Focus
             const lastCompletedIdx = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
             const maxCompletedIdx = lastCompletedIdx.length > 0 ? Math.max(...lastCompletedIdx) : -1;
@@ -748,10 +778,13 @@ class App {
 
             card.innerHTML = `
                 <div class="card-top-row">
-                    <span class="priority-badge ${priorityCfg.class}">
-                        <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
-                    </span>
-                    <span class="status-badge ${statusClass}">${statusText}</span>
+                    ${purchaseTypeBadge}
+                    <div style="display: flex; gap: 0.5rem;">
+                        <span class="priority-badge ${priorityCfg.class}">
+                            <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                        </span>
+                        <span class="status-badge ${statusClass}">${statusText}</span>
+                    </div>
                 </div>
                 
                 <div class="card-body">
@@ -796,6 +829,20 @@ class App {
         const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
         this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
         this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
+
+        // Purchase Type
+        const pTypeLabels = {
+            'buy': { label: 'ซื้อ', color: '#3b82f6', icon: 'fa-solid fa-cart-shopping' },
+            'hire': { label: 'จ้าง', color: '#10b981', icon: 'fa-solid fa-briefcase' },
+            'rent': { label: 'เช่า', color: '#f59e0b', icon: 'fa-solid fa-file-contract' }
+        };
+        const pType = project.purchaseType ? (pTypeLabels[project.purchaseType] || pTypeLabels['buy']) : pTypeLabels['buy'];
+
+        if (this.detailPurchaseType) {
+            this.detailPurchaseType.innerHTML = `<i class="${pType.icon}"></i> ${pType.label}`;
+            this.detailPurchaseType.style.backgroundColor = pType.color;
+            this.detailPurchaseType.style.color = 'white';
+        }
 
         const completedCount = project.steps.filter(s => s.completed).length;
         const percent = Math.round((completedCount / project.steps.length) * 100);

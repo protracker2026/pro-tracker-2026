@@ -1679,7 +1679,8 @@ class App {
                 }
             </style>
             <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
-                <h1>รายงานสรุปโครงการ: ${project.name}</h1>
+                <div style="font-size: 1rem; color: #64748b; margin-bottom: 5px;">รายงานสรุปโครงการ</div>
+                <h1 style="font-size: 1.3rem; line-height: 1.6; margin: 0; color: #1e293b;">${project.name}</h1>
                 <p style="color: #64748b; margin: 5px 0 0 0; font-size: 0.75rem;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
             </div>
             
@@ -1712,8 +1713,7 @@ class App {
             image: { type: 'jpeg', quality: 0.98 },
             html2canvas: {
                 scale: 2,
-                useCORS: true,
-                letterRendering: true
+                useCORS: true
             },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };

@@ -1218,9 +1218,44 @@ class App {
 
         // update progress bar in detail view
         const completedCount = this.activeProject.steps.filter(s => s.completed).length;
-        const percent = Math.round((completedCount / this.activeProject.steps.length) * 100);
+        const totalSteps = this.activeProject.steps.length;
+        const percent = Math.round((completedCount / totalSteps) * 100);
         this.detailOverallProgress.style.width = `${percent}%`;
         this.detailProgressPercent.textContent = `${percent}%`;
+
+        // Celebration if 100% and it was just completed
+        if (percent === 100 && step.completed) {
+            this.triggerCelebration();
+        }
+    }
+
+    triggerCelebration() {
+        // Fireball confetti
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 };
+
+        const randomInRange = (min, max) => Math.random() * (max - min) + min;
+
+        const interval = setInterval(() => {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            // since particles fall down, start a bit higher than random
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+            confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+        }, 250);
+
+        // Play sound
+        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/success-fanfare-trumpets-618.wav');
+        audio.volume = 0.5;
+        audio.play().catch(e => console.log('Audio play failed:', e));
+
+        this.showToast('🎉 ยินดีด้วย! คุณสะสางโครงการนี้สำเร็จแล้ว', 'success');
     }
 
     showToast(message, type = 'info') {

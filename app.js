@@ -218,6 +218,10 @@ class App {
         this.renderCurrentDate();
 
         this.initAccessCodeSystem();
+
+        // Preload celebration sound
+        this.celebrationSound = new Audio('https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3');
+        this.celebrationSound.load();
     }
 
     initElements() {
@@ -1250,10 +1254,12 @@ class App {
             confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
         }, 250);
 
-        // Play sound
-        const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/2013/success-fanfare-trumpets-618.wav');
-        audio.volume = 0.5;
-        audio.play().catch(e => console.log('Audio play failed:', e));
+        // Play sound (Pre-loaded)
+        if (this.celebrationSound) {
+            this.celebrationSound.currentTime = 0; // Reset to start
+            this.celebrationSound.volume = 0.5;
+            this.celebrationSound.play().catch(e => console.log('Audio play failed:', e));
+        }
 
         this.showToast('🎉 ยินดีด้วย! คุณสะสางโครงการนี้สำเร็จแล้ว', 'success');
     }

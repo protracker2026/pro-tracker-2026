@@ -976,15 +976,48 @@ body {
     resize: vertical;
 }
 
+.note-view-controls {
+    display: flex;
+    background: var(--bg-body);
+    padding: 0.2rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color);
+}
+
+.btn-note-view {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    padding: 0.35rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.btn-note-view:hover {
+    color: var(--text-main);
+}
+
+.btn-note-view.active {
+    background: var(--primary-color);
+    color: white;
+}
+
 .notes-list {
     margin-top: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+/* Timeline View (Default) */
+.notes-list.timeline {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: 1.5rem;
     position: relative;
 }
 
-.notes-list::before {
+.notes-list.timeline::before {
     content: '';
     position: absolute;
     left: 0;
@@ -995,37 +1028,101 @@ body {
     z-index: 0;
 }
 
-.note-item {
+.notes-list.timeline .note-item {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    padding: 0.75rem 1rem;
+    padding: 1rem;
     border-radius: var(--radius-sm);
     position: relative;
-    margin-left: 1rem;
+    margin-left: 1.25rem;
     z-index: 1;
     animation: slideIn 0.3s ease-out;
 }
 
-.note-item::before {
+.notes-list.timeline .note-item::before {
     content: '';
     position: absolute;
-    left: -1rem;
+    left: -1.25rem;
     top: 15px;
-    width: 1rem;
+    width: 1.25rem;
     height: 2px;
     background-color: var(--border-color);
 }
 
-.note-item::after {
+.notes-list.timeline .note-item::after {
     content: '';
     position: absolute;
-    left: -1.25rem;
+    left: -1.5rem;
     top: 12px;
-    width: 8px;
-    height: 8px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
     background-color: var(--primary-color);
     border: 2px solid var(--bg-body);
+}
+
+/* Post-it / Grid View */
+.notes-list.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+}
+
+.notes-list.grid .note-item {
+    background-color: #fef08a;
+    /* Soft Yellow Post-it */
+    color: #164e63;
+    padding: 1.25rem;
+    border-radius: 2px;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    min-height: 180px;
+    display: flex;
+    flex-direction: column;
+    transform: rotate(-1deg);
+    transition: transform 0.2s;
+}
+
+.notes-list.grid .note-item:nth-child(even) {
+    transform: rotate(1.5deg);
+    background-color: #bae6fd;
+    /* Soft Blue */
+}
+
+.notes-list.grid .note-item:nth-child(3n) {
+    background-color: #fecaca;
+    /* Soft Red */
+}
+
+.notes-list.grid .note-item:hover {
+    transform: scale(1.05) rotate(0deg);
+    z-index: 10;
+}
+
+.notes-list.grid .note-timestamp {
+    color: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.1);
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.notes-list.grid .note-content {
+    color: #1a1a1a;
+    font-size: 0.85rem;
+    flex: 1;
+}
+
+.notes-list.grid .btn-delete-note {
+    color: rgba(0, 0, 0, 0.3);
+}
+
+.notes-list.grid .btn-delete-note:hover {
+    color: #ef4444;
+}
+
+.notes-list.grid .deadline-badge {
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    color: #ef4444;
 }
 
 .note-timestamp {

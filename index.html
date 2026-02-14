@@ -206,7 +206,18 @@
                         </div>
 
                         <div class="notes-section">
-                            <h3><i class="fa-solid fa-note-sticky"></i> บันทึกช่วยจำ</h3>
+                            <div
+                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                                <h3 style="margin: 0;"><i class="fa-solid fa-note-sticky"></i> บันทึกช่วยจำ</h3>
+                                <div class="note-view-controls">
+                                    <button class="btn-note-view active" data-mode="timeline" title="แสดงแบบเส้นเวลา">
+                                        <i class="fa-solid fa-timeline"></i>
+                                    </button>
+                                    <button class="btn-note-view" data-mode="grid" title="แสดงแบบโพสต์อิท">
+                                        <i class="fa-solid fa-grip-vertical"></i>
+                                    </button>
+                                </div>
+                            </div>
                             <div class="add-note-box">
                                 <textarea id="note-input" placeholder="พิมพ์บันทึกใหม่ที่นี่..."></textarea>
                                 <div

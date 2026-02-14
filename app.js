@@ -205,6 +205,8 @@ class App {
         this.currentView = 'dashboard';
         this.activeProject = null;
         this.stepsTemplate = JSON.parse(JSON.stringify(STEPS_TEMPLATE)); // Default
+        this.noteViewMode = localStorage.getItem('protracker_note_view') || 'timeline';
+        this.activeWorkflowStepIndex = 0;
 
         this.initElements();
         this.initEventListeners();
@@ -433,6 +435,21 @@ class App {
         });
 
         this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
+
+        // Note View Mode Toggles
+        document.querySelectorAll('.btn-note-view').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const mode = btn.dataset.mode;
+                this.noteViewMode = mode;
+                localStorage.setItem('protracker_note_view', mode);
+
+                // UI Update
+                document.querySelectorAll('.btn-note-view').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+
+                this.renderNotesList();
+            });
+        });
     }
 
     async initAccessCodeSystem() {
@@ -1363,6 +1380,14 @@ class App {
     renderNotesList() {
         if (!this.notesList) return;
         this.notesList.innerHTML = '';
+
+        // Sync class with current mode
+        this.notesList.className = `notes-list ${this.noteViewMode}`;
+
+        // Update button active state if needed (e.g. when view changes)
+        document.querySelectorAll('.btn-note-view').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === this.noteViewMode);
+        });
 
         const stepData = this.activeProject.steps[this.activeWorkflowStepIndex];
         const notes = stepData.notes || [];

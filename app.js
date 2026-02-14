@@ -1647,9 +1647,6 @@ class App {
         });
 
         element.style.width = '190mm';
-        element.style.position = 'absolute';
-        element.style.left = '-9999px';
-        element.style.top = '0';
 
         element.innerHTML = `
             <style>

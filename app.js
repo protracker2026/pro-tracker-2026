@@ -1077,9 +1077,9 @@ class App {
                 infoEl.id = 'step-completion-info';
                 this.btnCompleteStep.parentNode.insertBefore(infoEl, this.btnCompleteStep.nextSibling);
             }
-            const dateStr = stepData.completedAt ? new Date(stepData.completedAt).toLocaleDateString('th-TH') : '-';
+            const dateStr = stepData.completedAt ? this._formatDDMMYYYY(new Date(stepData.completedAt)) : '-';
             const docNum = stepData.documentNumber || '-';
-            const docDateStr = stepData.documentDate ? new Date(stepData.documentDate).toLocaleDateString('th-TH') : '-';
+            const docDateStr = stepData.documentDate || '-';
             infoEl.innerHTML = `
                 <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
                     <div><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
@@ -1331,11 +1331,11 @@ class App {
             label.textContent = `ขั้นตอนที่ ${stepIndex + 1}: ${step.title}`;
 
             // Load saved prefix from project, or empty
-            const today = new Date().toISOString().split('T')[0];
+            const todayStr = this._formatDDMMYYYY(new Date());
             inpPrefix.value = this.activeProject.docNumberPrefix || '';
             inpSuffix.value = '';
-            inpDocDate.value = today;
-            inpDate.value = today;
+            inpDocDate.value = todayStr;
+            inpDate.value = todayStr;
             modal.classList.add('open');
 
             // Auto-focus suffix if prefix already set
@@ -1364,13 +1364,13 @@ class App {
                     step.documentNumber = null;
                 }
 
-                // Document date (ลงวันที่)
-                step.documentDate = inpDocDate.value || null;
+                // Document date (ลงวันที่) — store as DD/MM/YYYY string
+                step.documentDate = inpDocDate.value.trim() || null;
 
-                // Completion / approval date
-                const selectedDate = inpDate.value;
-                step.completedAt = selectedDate
-                    ? new Date(selectedDate).toISOString()
+                // Completion / approval date — parse DD/MM/YYYY to ISO
+                const parsedDate = this._parseDDMMYYYY(inpDate.value.trim());
+                step.completedAt = parsedDate
+                    ? parsedDate.toISOString()
                     : new Date().toISOString();
 
                 modal.classList.remove('open');
@@ -2202,6 +2202,22 @@ class App {
         const div = document.createElement('div');
         div.textContent = text || '';
         return div.innerHTML;
+    }
+
+    _formatDDMMYYYY(date) {
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        return `${d}/${m}/${y}`;
+    }
+
+    _parseDDMMYYYY(str) {
+        if (!str) return null;
+        const parts = str.split('/');
+        if (parts.length !== 3) return null;
+        const [d, m, y] = parts.map(Number);
+        if (!d || !m || !y) return null;
+        return new Date(y, m - 1, d);
     }
 }
 

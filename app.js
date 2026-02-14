@@ -1066,7 +1066,7 @@ class App {
         // Button Logic
         if (stepData.completed) {
             this.btnCompleteStep.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล (Double-click ยกเลิก)';
-            this.btnCompleteStep.classList.remove('btn-primary');
+            this.btnCompleteStep.classList.remove('btn-primary', 'btn-action-complete');
             this.btnCompleteStep.classList.add('btn-outline');
 
             // Show completion info
@@ -1088,12 +1088,17 @@ class App {
             `;
         } else {
             this.btnCompleteStep.innerHTML = '<i class="fa-regular fa-circle-check"></i> ทำขั้นตอนเสร็จสิ้น';
-            this.btnCompleteStep.classList.add('btn-outline'); // Standard outline
+
+            // Default state
+            this.btnCompleteStep.classList.remove('btn-primary', 'btn-action-complete');
+            this.btnCompleteStep.classList.add('btn-outline');
+
             // Highlight if it's the current active step
             if (index === this.activeProject.currentStepIndex) {
-                this.btnCompleteStep.classList.add('btn-primary');
                 this.btnCompleteStep.classList.remove('btn-outline');
+                this.btnCompleteStep.classList.add('btn-action-complete');
             }
+
             // Remove completion info if reverting
             const infoEl = document.getElementById('step-completion-info');
             if (infoEl) infoEl.remove();

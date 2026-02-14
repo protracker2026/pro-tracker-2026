@@ -503,7 +503,8 @@ class App {
             }
         });
 
-        this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
+        this.btnCompleteStep.addEventListener('click', (e) => this.handleStepClick(e));
+        this.btnCompleteStep.addEventListener('dblclick', (e) => this.handleStepRevert(e));
 
         // Collapsible Sections
         if (this.headerTimeline) {
@@ -1066,7 +1067,7 @@ class App {
 
         // Button Logic
         if (stepData.completed) {
-            this.btnCompleteStep.innerHTML = '<i class="fa-solid fa-rotate-left"></i> ย้อนกลับสถานะ';
+            this.btnCompleteStep.innerHTML = '<i class="fa-solid fa-pen-to-square"></i> แก้ไขข้อมูล (Double-click ยกเลิก)';
             this.btnCompleteStep.classList.remove('btn-primary');
             this.btnCompleteStep.classList.add('btn-outline');
 
@@ -1304,21 +1305,53 @@ class App {
         this.loadWorkflowStep(this.activeWorkflowStepIndex);
     }
 
-    async toggleStepCompletion() {
+    handleStepClick(e) {
+        if (!this.activeProject) return;
+        const stepIndex = this.activeWorkflowStepIndex;
+        const step = this.activeProject.steps[stepIndex];
+
+        if (step.completed) {
+            if (this.clickTimeout) clearTimeout(this.clickTimeout);
+            this.clickTimeout = setTimeout(() => {
+                this.openStepCompletionModal('edit');
+            }, 250);
+        } else {
+            this.openStepCompletionModal('complete');
+        }
+    }
+
+    async handleStepRevert(e) {
+        if (!this.activeProject) return;
+        const stepIndex = this.activeWorkflowStepIndex;
+        const step = this.activeProject.steps[stepIndex];
+
+        if (step.completed) {
+            if (this.clickTimeout) clearTimeout(this.clickTimeout);
+            await this.revertStepCompletion();
+        }
+    }
+
+    async revertStepCompletion() {
+        if (!this.activeProject) return;
+        const stepIndex = this.activeWorkflowStepIndex;
+        const step = this.activeProject.steps[stepIndex];
+
+        step.completed = false;
+        step.completedAt = null;
+        step.documentNumber = null;
+        step.documentDate = null;
+        this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
+        await this._saveAndRefreshStep(stepIndex);
+    }
+
+    openStepCompletionModal(mode = 'complete') {
         if (!this.activeProject) return;
 
         const stepIndex = this.activeWorkflowStepIndex;
         const step = this.activeProject.steps[stepIndex];
 
-        if (step.completed) {
-            // --- Reverting: no popup needed ---
-            step.completed = false;
-            step.completedAt = null;
-            step.documentNumber = null;
-            step.documentDate = null;
-            this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
-            await this._saveAndRefreshStep(stepIndex);
-        } else {
+        // Revert logic handled by handleStepRevert
+        {
             // --- Completing: show popup ---
             const modal = document.getElementById('modal-step-complete');
             const label = document.getElementById('step-complete-label');
@@ -1346,8 +1379,26 @@ class App {
             inpSuffix.value = '';
 
             // Set dates via Flatpickr
-            inpDocDate._flatpickr.setDate(today);
-            inpDate._flatpickr.setDate(today);
+            let docDateStr = this._formatDDMMYYYY(new Date());
+            let completeDateStr = this._formatDDMMYYYY(new Date());
+
+            if (mode === 'edit') {
+                const fullDocNum = step.documentNumber || '';
+                if (fullDocNum.startsWith(prefix) && prefix.length > 0) {
+                    inpSuffix.value = fullDocNum.substring(prefix.length);
+                    inpSuffix.value = fullDocNum;
+                    inpPrefix.value = ''; // clear prefix if mismatch to avoid duplication
+                }
+                if (step.documentDate) docDateStr = step.documentDate;
+                if (step.completedAt) completeDateStr = this._formatDDMMYYYY(new Date(step.completedAt));
+
+                btnConfirm.innerHTML = '<i class="fa-solid fa-save"></i> บันทึกการแก้ไข';
+            } else {
+                btnConfirm.innerHTML = '<i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น';
+            }
+
+            inpDocDate._flatpickr.setDate(this._parseDDMMYYYY(docDateStr) || new Date());
+            inpDate._flatpickr.setDate(this._parseDDMMYYYY(completeDateStr) || new Date());
 
             modal.classList.add('open');
 
@@ -1387,7 +1438,8 @@ class App {
                     : new Date().toISOString();
 
                 modal.classList.remove('open');
-                this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
+                const msg = mode === 'edit' ? `บันทึกแก้ไขขั้นตอนที่ ${stepIndex + 1}` : `บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`;
+                this.showToast(msg, 'success');
                 await this._saveAndRefreshStep(stepIndex);
             });
         }

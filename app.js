@@ -1655,22 +1655,27 @@ class App {
                     font-size: 0.85rem;
                 }
                 .pdf-header h1 {
-                    font-size: 1.4rem;
-                    line-height: 1.4;
+                    font-size: 1.2rem;
+                    line-height: 1.8;
                     margin: 0;
                     color: #1e293b;
+                    word-break: break-all;
                 }
                 .pdf-section h2 {
                     font-size: 1rem;
                     margin-bottom: 8px;
-                    line-height: 1.4;
+                    line-height: 1.8;
+                    word-break: break-all;
                 }
                 .pdf-step {
                     font-size: 0.8rem;
+                    line-height: 1.6;
                 }
                 .pdf-notes {
                     word-wrap: break-word;
                     overflow-wrap: break-word;
+                    word-break: break-word;
+                    line-height: 1.6;
                 }
             </style>
             <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
@@ -1681,11 +1686,11 @@ class App {
             <div class="pdf-section" style="margin-bottom: 20px;">
                 <h2 style="color: #4f46e5; border-left: 4px solid #6366f1; padding-left: 10px;">ข้อมูลโครงการ</h2>
                 <div style="padding-left: 15px;">
-                    <p style="margin: 4px 0;"><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
-                    <p style="margin: 4px 0;"><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
-                    <p style="margin: 4px 0;"><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
-                    <p style="margin: 4px 0;"><strong>ระดับความเร่งด่วน:</strong> ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}</p>
-                    <p style="margin: 4px 0;"><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
+                    <p style="margin: 6px 0;"><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
+                    <p style="margin: 6px 0;"><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
+                    <p style="margin: 6px 0;"><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
+                    <p style="margin: 6px 0;"><strong>ระดับความเร่งด่วน:</strong> ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}</p>
+                    <p style="margin: 6px 0;"><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
                 </div>
             </div>
             
@@ -1705,7 +1710,11 @@ class App {
             margin: 10,
             filename: `Project_Report_${project.name}.pdf`,
             image: { type: 'jpeg', quality: 0.98 },
-            html2canvas: { scale: 2, useCORS: true },
+            html2canvas: {
+                scale: 2,
+                useCORS: true,
+                letterRendering: true
+            },
             jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
         };
 

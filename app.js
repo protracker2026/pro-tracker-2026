@@ -1400,6 +1400,7 @@ class App {
         sorted.forEach((note) => {
             const div = document.createElement('div');
             div.className = 'note-item';
+            div.dataset.id = note.timestamp;
 
             const dateStr = new Date(note.timestamp).toLocaleString('th-TH', {
                 day: '2-digit', month: '2-digit', year: 'numeric',
@@ -1409,10 +1410,49 @@ class App {
             div.innerHTML = `
                 <div class="note-timestamp">
                     <span class="info-badge" style="background:none; padding:0;"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
-                    <button class="btn-delete-timeline" title="ลบ" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                    <div style="display:flex; gap:0.25rem;">
+                        <button class="btn-note-edit" title="แก้ไข"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-delete-timeline" title="ลบ" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fa-solid fa-trash-can"></i></button>
+                    </div>
                 </div>
-                <div class="note-content">${note.text}</div>
+                <div class="note-content-display">${note.text}</div>
+                <div class="note-edit-box" style="display:none;">
+                    <textarea class="note-edit-area">${note.text}</textarea>
+                    <div class="note-edit-actions">
+                        <button class="btn btn-sm btn-outline btn-cancel-edit">ยกเลิก</button>
+                        <button class="btn btn-sm btn-primary btn-save-edit">บันทึก</button>
+                    </div>
+                </div>
             `;
+
+            const display = div.querySelector('.note-content-display');
+            const editBox = div.querySelector('.note-edit-box');
+            const textarea = div.querySelector('.note-edit-area');
+
+            // Toggle Edit
+            div.querySelector('.btn-note-edit').addEventListener('click', () => {
+                display.style.display = 'none';
+                editBox.style.display = 'block';
+                textarea.focus();
+            });
+
+            // Cancel Edit
+            div.querySelector('.btn-cancel-edit').addEventListener('click', () => {
+                display.style.display = 'block';
+                editBox.style.display = 'none';
+                textarea.value = note.text;
+            });
+
+            // Save Edit
+            div.querySelector('.btn-save-edit').addEventListener('click', async () => {
+                const newText = textarea.value.trim();
+                if (!newText) return;
+
+                note.text = newText;
+                await FirestoreManager.updateProject(this.activeProject);
+                this.renderTimeline();
+                this.showToast('แก้ไขบันทึกแล้ว', 'success');
+            });
 
             div.querySelector('.btn-delete-timeline').addEventListener('click', async () => {
                 if (confirm('ลบบันทึกเหตุการณ์นี้?')) {
@@ -1449,10 +1489,50 @@ class App {
             div.innerHTML = `
                 <div class="note-timestamp">
                     <span>${dateStr}</span>
-                    <button class="btn-delete-postit" title="ลบ" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+                    <div style="display:flex; gap:0.25rem;">
+                        <button class="btn-note-edit" title="แก้ไข" style="background:none; border:none; color:inherit; cursor:pointer; opacity:0.6;"><i class="fa-solid fa-pen-to-square"></i></button>
+                        <button class="btn-delete-postit" title="ลบ" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+                    </div>
                 </div>
-                <div class="note-content" style="white-space: pre-wrap;">${note.text}</div>
+                <div class="note-content-display" style="white-space: pre-wrap;">${note.text}</div>
+                <div class="note-edit-box" style="display:none; flex:1;">
+                    <textarea class="note-edit-area" style="background:rgba(255,255,255,0.5); border-color:rgba(0,0,0,0.1); height:80%;">${note.text}</textarea>
+                    <div class="note-edit-actions">
+                        <button class="btn btn-sm btn-cancel-edit" style="background:none; border:none; padding: 2px 5px; font-size: 0.75rem;">X</button>
+                        <button class="btn btn-sm btn-save-edit" style="background:rgba(0,0,0,0.1); border:none; padding: 2px 8px; font-size: 0.75rem;">บันทึก</button>
+                    </div>
+                </div>
             `;
+
+            const display = div.querySelector('.note-content-display');
+            const editBox = div.querySelector('.note-edit-box');
+            const textarea = div.querySelector('.note-edit-area');
+
+            // Toggle Edit
+            div.querySelector('.btn-note-edit').addEventListener('click', () => {
+                display.style.display = 'none';
+                editBox.style.display = 'flex';
+                editBox.style.flexDirection = 'column';
+                textarea.focus();
+            });
+
+            // Cancel Edit
+            div.querySelector('.btn-cancel-edit').addEventListener('click', () => {
+                display.style.display = 'block';
+                editBox.style.display = 'none';
+                textarea.value = note.text;
+            });
+
+            // Save Edit
+            div.querySelector('.btn-save-edit').addEventListener('click', async () => {
+                const newText = textarea.value.trim();
+                if (!newText) return;
+
+                note.text = newText;
+                await FirestoreManager.updateProject(this.activeProject);
+                this.renderPostits();
+                this.showToast('แก้ไขโน้ตแล้ว', 'success');
+            });
 
             div.querySelector('.btn-delete-postit').addEventListener('click', async () => {
                 if (confirm('ลบโพสต์อิทนี้?')) {

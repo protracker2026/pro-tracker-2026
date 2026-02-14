@@ -1009,7 +1009,50 @@ body {
     margin-left: 1.25rem;
     z-index: 1;
     animation: slideIn 0.3s ease-out;
+    transition: box-shadow 0.2s;
 }
+
+.notes-list.timeline .note-item:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.note-edit-area {
+    width: 100%;
+    min-height: 80px;
+    background: var(--bg-body);
+    border: 1px solid var(--primary-color);
+    color: var(--text-main);
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    margin: 0.5rem 0;
+    resize: vertical;
+}
+
+.note-edit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.btn-note-edit {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.btn-note-edit:hover {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--primary-color);
+}
+
 
 .notes-list.timeline .note-item::before {
     content: '';
@@ -1077,7 +1120,7 @@ body {
     margin-bottom: 0.75rem;
 }
 
-.notes-list.grid .note-content {
+.notes-list.grid .note-content-display {
     color: #1a1a1a;
     font-size: 0.85rem;
     flex: 1;
@@ -1106,7 +1149,7 @@ body {
     align-items: center;
 }
 
-.note-content {
+.note-content-display {
     font-size: 0.9rem;
     line-height: 1.5;
     white-space: pre-wrap;

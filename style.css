@@ -372,13 +372,17 @@ body {
 }
 
 .card-header h3 {
-    font-size: 1.2rem;
+    font-size: 0.9rem;
+    /* Reduced from 1.2rem */
     font-weight: 700;
-    line-height: 1.35;
+    line-height: 1.4;
     white-space: normal;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 3;
+    /* Allow 3 lines since font is smaller */
     overflow: hidden;
     color: var(--text-main);
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
 }
 
 .card-main-info {

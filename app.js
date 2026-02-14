@@ -1647,28 +1647,54 @@ class App {
         });
 
         element.innerHTML = `
+            <style>
+                .pdf-template {
+                    font-family: 'Sarabun', sans-serif;
+                    line-height: 1.6;
+                    color: #1e293b;
+                    font-size: 0.85rem;
+                }
+                .pdf-header h1 {
+                    font-size: 1.4rem;
+                    line-height: 1.4;
+                    margin: 0;
+                    color: #1e293b;
+                }
+                .pdf-section h2 {
+                    font-size: 1rem;
+                    margin-bottom: 8px;
+                    line-height: 1.4;
+                }
+                .pdf-step {
+                    font-size: 0.8rem;
+                }
+                .pdf-notes {
+                    word-wrap: break-word;
+                    overflow-wrap: break-word;
+                }
+            </style>
             <div class="pdf-header" style="border-bottom: 2px solid #6366f1; padding-bottom: 15px; margin-bottom: 20px;">
-                <h1 style="color: #1e293b; margin: 0;">รายงานสรุปโครงการ: ${project.name}</h1>
-                <p style="color: #64748b; margin: 5px 0 0 0;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
+                <h1>รายงานสรุปโครงการ: ${project.name}</h1>
+                <p style="color: #64748b; margin: 5px 0 0 0; font-size: 0.75rem;">สร้างเมื่อ: ${new Date(project.createdAt).toLocaleDateString('th-TH')}</p>
             </div>
             
-            <div class="pdf-section" style="margin-bottom: 25px;">
-                <h2 style="font-size: 1.1rem; color: #4f46e5; margin-bottom: 10px; border-left: 4px solid #6366f1; padding-left: 10px;">ข้อมูลโครงการ</h2>
-                <div style="padding-left: 15px; font-size: 0.95rem;">
-                    <p><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
-                    <p><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
-                    <p><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
-                    <p><strong>ระดับความเร่งด่วน:</strong> ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}</p>
-                    <p><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
+            <div class="pdf-section" style="margin-bottom: 20px;">
+                <h2 style="color: #4f46e5; border-left: 4px solid #6366f1; padding-left: 10px;">ข้อมูลโครงการ</h2>
+                <div style="padding-left: 15px;">
+                    <p style="margin: 4px 0;"><strong>รายละเอียด:</strong> ${project.description || '-'}</p>
+                    <p style="margin: 4px 0;"><strong>งบประมาณ:</strong> ${new Intl.NumberFormat('th-TH').format(project.budget)} บาท</p>
+                    <p style="margin: 4px 0;"><strong>กำหนดเสร็จ:</strong> ${project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH') : '-'}</p>
+                    <p style="margin: 4px 0;"><strong>ระดับความเร่งด่วน:</strong> ${PRIORITY_LABELS[project.priority]?.label || 'ปกติ'}</p>
+                    <p style="margin: 4px 0;"><strong>สถานะปัจจุบัน:</strong> ${project.status === 'completed' ? 'เสร็จสิ้นโครงการ' : 'กำลังดำเนินการ'}</p>
                 </div>
             </div>
             
-            <div class="pdf-section" style="margin-bottom: 25px;">
-                <h2 style="font-size: 1.1rem; color: #4f46e5; margin-bottom: 10px; border-left: 4px solid #6366f1; padding-left: 10px;">ประวัติการดำเนินงาน (Workflow & Notes)</h2>
+            <div class="pdf-section" style="margin-bottom: 20px;">
+                <h2 style="color: #4f46e5; border-left: 4px solid #6366f1; padding-left: 10px;">ประวัติการดำเนินงาน (Workflow & Notes)</h2>
                 ${stepsHtml}
             </div>
 
-            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.8rem; text-align: center; color: #94a3b8;">
+            <div style="margin-top: 30px; border-top: 1px solid #eee; padding-top: 10px; font-size: 0.7rem; text-align: center; color: #94a3b8;">
                 รายงานนี้ถูกสร้างโดยระบบ Procurement Tracker ณ วันที่ ${new Date().toLocaleString('th-TH')}
             </div>
         `;

@@ -1079,10 +1079,12 @@ class App {
             }
             const dateStr = stepData.completedAt ? new Date(stepData.completedAt).toLocaleDateString('th-TH') : '-';
             const docNum = stepData.documentNumber || '-';
+            const docDateStr = stepData.documentDate ? new Date(stepData.documentDate).toLocaleDateString('th-TH') : '-';
             infoEl.innerHTML = `
                 <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
-                    <div><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> เสร็จสิ้นเมื่อ: <strong>${dateStr}</strong></div>
-                    <div style="margin-top: 4px;"><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
+                    <div><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
+                    <div style="margin-top: 4px;"><i class="fa-solid fa-calendar-day" style="color: #f59e0b;"></i> ลงวันที่: <strong>${docDateStr}</strong></div>
+                    <div style="margin-top: 4px;"><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> วันที่เสร็จสิ้น/อนุมัติ: <strong>${dateStr}</strong></div>
                 </div>
             `;
         } else {
@@ -1313,6 +1315,7 @@ class App {
             step.completed = false;
             step.completedAt = null;
             step.documentNumber = null;
+            step.documentDate = null;
             this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
             await this._saveAndRefreshStep(stepIndex);
         } else {
@@ -1321,15 +1324,18 @@ class App {
             const label = document.getElementById('step-complete-label');
             const inpPrefix = document.getElementById('inp-step-doc-prefix');
             const inpSuffix = document.getElementById('inp-step-doc-suffix');
+            const inpDocDate = document.getElementById('inp-step-doc-date');
             const inpDate = document.getElementById('inp-step-complete-date');
             const btnConfirm = document.getElementById('btn-confirm-step-complete');
 
             label.textContent = `ขั้นตอนที่ ${stepIndex + 1}: ${step.title}`;
 
             // Load saved prefix from project, or empty
+            const today = new Date().toISOString().split('T')[0];
             inpPrefix.value = this.activeProject.docNumberPrefix || '';
             inpSuffix.value = '';
-            inpDate.value = new Date().toISOString().split('T')[0]; // Default to today
+            inpDocDate.value = today;
+            inpDate.value = today;
             modal.classList.add('open');
 
             // Auto-focus suffix if prefix already set
@@ -1358,6 +1364,10 @@ class App {
                     step.documentNumber = null;
                 }
 
+                // Document date (ลงวันที่)
+                step.documentDate = inpDocDate.value || null;
+
+                // Completion / approval date
                 const selectedDate = inpDate.value;
                 step.completedAt = selectedDate
                     ? new Date(selectedDate).toISOString()
@@ -2073,9 +2083,15 @@ class App {
                     </div>
                 `;
 
-                // Document Number
-                if (step.completed && step.documentNumber) {
-                    html += `<div style="margin-left: 14px; margin-bottom: 6px; font-size: 13px; color: #475569;"><i>เลขหนังสือ: ${this.escapeHtml(step.documentNumber)}</i></div>`;
+                // Document Number & Date
+                if (step.completed && (step.documentNumber || step.documentDate)) {
+                    let info = '';
+                    if (step.documentNumber) info += `เลขหนังสือ: ${this.escapeHtml(step.documentNumber)}`;
+                    if (step.documentDate) {
+                        if (info) info += ' &nbsp;|&nbsp; ';
+                        info += `ลงวันที่: ${new Date(step.documentDate).toLocaleDateString('th-TH')}`;
+                    }
+                    html += `<div style="margin-left: 14px; margin-bottom: 6px; font-size: 13px; color: #475569;"><i>${info}</i></div>`;
                 }
 
                 // Checklist

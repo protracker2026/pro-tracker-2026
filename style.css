@@ -346,29 +346,92 @@ body {
 }
 
 .projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
 }
 
 .project-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    padding: 1.25rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 1rem 1.5rem;
+    transition: all 0.2s ease-out;
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
+
+    /* Desktop Grid Layout with Named Areas */
+    display: grid;
+    grid-template-areas:
+        "title info status"
+        "flow flow flow";
+    grid-template-columns: 1.6fr 1.2fr auto;
+    align-items: center;
+    gap: 0.5rem 2rem;
+}
+
+.card-header {
+    grid-area: title;
+    margin-bottom: 0 !important;
+}
+
+.card-main-info {
+    grid-area: info;
+    margin: 0 !important;
+    gap: 1.5rem;
+}
+
+.card-top-row {
+    grid-area: status;
+    margin-bottom: 0 !important;
+    justify-content: flex-end !important;
+}
+
+.card-steps {
+    grid-area: flow;
+    margin-top: 0.25rem !important;
 }
 
 .project-card:hover {
-    transform: translateY(-6px);
-    box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.7);
-    border-color: rgba(249, 115, 22, 0.4);
+    transform: translateX(4px);
+    background-color: rgba(255, 255, 255, 0.02);
+    border-color: var(--primary-color);
+}
+
+/* Mobile Responsive: Revert to Grid */
+@media screen and (max-width: 1024px) {
+    .projects-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .project-card {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+        padding: 1.25rem;
+    }
+
+    .project-card:hover {
+        transform: translateY(-4px);
+    }
+
+    /* Reset Grid Areas for Mobile */
+    .card-header,
+    .card-main-info,
+    .card-top-row,
+    .card-steps {
+        grid-area: auto;
+        margin-bottom: 0;
+        /* Let flex gap handle spacing */
+        justify-content: space-between !important;
+    }
+
+    .card-header {
+        margin-bottom: 0 !important;
+    }
 }
 
 .card-top-row {

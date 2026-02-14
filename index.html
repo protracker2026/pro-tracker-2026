@@ -507,7 +507,16 @@
                 <p id="step-complete-label" style="color: var(--text-muted); margin-bottom: 1rem;"></p>
                 <div class="form-group">
                     <label>เลขหนังสือ (ถ้ามี)</label>
-                    <input type="text" id="inp-step-doc-number" placeholder="เช่น ศธ 0001/001">
+                    <div id="doc-number-prefix-row"
+                        style="display: flex; align-items: center; gap: 0; margin-bottom: 6px;">
+                        <input type="text" id="inp-step-doc-prefix" placeholder="เช่น ยธ 1101.06/"
+                            style="border-radius: 8px 0 0 8px; border-right: none; flex: 1; min-width: 0;">
+                        <input type="text" id="inp-step-doc-suffix" placeholder="เลขที่"
+                            style="border-radius: 0 8px 8px 0; width: 100px; text-align: center;">
+                    </div>
+                    <div style="font-size: 0.75rem; color: var(--text-muted);">
+                        <i class="fa-solid fa-info-circle"></i> ตั้ง prefix ครั้งแรก แล้วจะจำไว้เป็นค่าเริ่มต้น
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>วันที่ดำเนินการเสร็จ</label>

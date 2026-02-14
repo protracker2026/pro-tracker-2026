@@ -1295,14 +1295,23 @@ class App {
             // --- Completing: show popup ---
             const modal = document.getElementById('modal-step-complete');
             const label = document.getElementById('step-complete-label');
-            const inpDocNumber = document.getElementById('inp-step-doc-number');
+            const inpPrefix = document.getElementById('inp-step-doc-prefix');
+            const inpSuffix = document.getElementById('inp-step-doc-suffix');
             const inpDate = document.getElementById('inp-step-complete-date');
             const btnConfirm = document.getElementById('btn-confirm-step-complete');
 
             label.textContent = `ขั้นตอนที่ ${stepIndex + 1}: ${step.title}`;
-            inpDocNumber.value = step.documentNumber || '';
+
+            // Load saved prefix from project, or empty
+            inpPrefix.value = this.activeProject.docNumberPrefix || '';
+            inpSuffix.value = '';
             inpDate.value = new Date().toISOString().split('T')[0]; // Default to today
             modal.classList.add('open');
+
+            // Auto-focus suffix if prefix already set
+            if (inpPrefix.value) {
+                setTimeout(() => inpSuffix.focus(), 100);
+            }
 
             // Remove any previous listener
             const newBtn = btnConfirm.cloneNode(true);
@@ -1310,7 +1319,20 @@ class App {
 
             newBtn.addEventListener('click', async () => {
                 step.completed = true;
-                step.documentNumber = inpDocNumber.value.trim() || null;
+
+                // Save prefix to project for future use
+                const prefix = inpPrefix.value.trim();
+                if (prefix) {
+                    this.activeProject.docNumberPrefix = prefix;
+                }
+
+                // Combine prefix + suffix
+                const suffix = inpSuffix.value.trim();
+                if (prefix || suffix) {
+                    step.documentNumber = prefix + suffix;
+                } else {
+                    step.documentNumber = null;
+                }
 
                 const selectedDate = inpDate.value;
                 step.completedAt = selectedDate

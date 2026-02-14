@@ -1455,38 +1455,52 @@ class App {
                 setTimeout(() => inpSuffix.focus(), 100);
             }
 
-            // Remove any previous listener
+            // Remove any previous listener for Confirm
             const newBtn = btnConfirm.cloneNode(true);
             btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
 
-            newBtn.addEventListener('click', async () => {
-                step.completed = true;
-
-                // Save prefix to project for future use
+            // Logic helper
+            const getStepData = () => {
                 const prefix = inpPrefix.value.trim();
-                if (prefix) {
-                    this.activeProject.docNumberPrefix = prefix;
-                }
+                if (prefix) this.activeProject.docNumberPrefix = prefix;
 
-                // Combine prefix + suffix
                 const suffix = inpSuffix.value.trim();
                 let fullDocNum = null;
-                if (prefix || suffix) {
-                    fullDocNum = prefix + suffix;
-                }
+                if (prefix || suffix) fullDocNum = prefix + suffix;
+
                 step.documentNumber = fullDocNum;
-
                 step.documentDate = inpDocDate.value.trim() || null;
+            };
 
-                // Completion / approval date
+            newBtn.addEventListener('click', async () => {
+                step.completed = true;
+                getStepData();
+
+                // Confirm: Default to now if empty
                 const parsedDate = this._parseDDMMYYYY(inpDate.value.trim());
-                step.completedAt = parsedDate
-                    ? parsedDate.toISOString()
-                    : new Date().toISOString();
+                step.completedAt = parsedDate ? parsedDate.toISOString() : new Date().toISOString();
 
                 modal.classList.remove('open');
                 const msg = mode === 'edit' ? `บันทึกแก้ไขขั้นตอนที่ ${stepIndex + 1}` : `บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`;
                 this.showToast(msg, 'success');
+                await this._saveAndRefreshStep(stepIndex);
+            });
+
+            // Logic for Save Draft
+            const btnDraft = document.getElementById('btn-save-draft-step');
+            const newBtnDraft = btnDraft.cloneNode(true);
+            btnDraft.parentNode.replaceChild(newBtnDraft, btnDraft);
+
+            newBtnDraft.addEventListener('click', async () => {
+                step.completed = false;
+                getStepData();
+
+                // Draft: Keep null if empty
+                const parsedDate = this._parseDDMMYYYY(inpDate.value.trim());
+                step.completedAt = parsedDate ? parsedDate.toISOString() : null;
+
+                modal.classList.remove('open');
+                this.showToast(`บันทึกชั่วคราว ขั้นตอนที่ ${stepIndex + 1}`, 'info');
                 await this._saveAndRefreshStep(stepIndex);
             });
         }

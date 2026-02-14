@@ -364,33 +364,49 @@ body {
     /* Desktop Grid Layout with Named Areas */
     display: grid;
     grid-template-areas:
-        "title info status"
-        "flow flow flow";
-    grid-template-columns: 1.6fr 1.2fr auto;
+        "title title title"
+        "info flow status";
+    /* Info(Budget/Date) | Flow(Progress) | Status(Badge) */
+    grid-template-columns: fit-content(300px) 1fr auto;
     align-items: center;
     gap: 0.5rem 2rem;
 }
 
 .card-header {
     grid-area: title;
-    margin-bottom: 0 !important;
+    margin-bottom: 0.5rem !important;
+    /* Add space below title */
 }
 
+.card-header h3 {
+    font-size: 1.1rem;
+    /* Increase size slightly */
+    white-space: normal;
+    /* Allow wrap if very long, or nowrap if preferred */
+    -webkit-line-clamp: unset;
+    /* Remove line clamp */
+}
+
+/* Adjust Info Area */
 .card-main-info {
     grid-area: info;
     margin: 0 !important;
     gap: 1.5rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
+/* Adjust Flow Area */
+.card-steps {
+    grid-area: flow;
+    margin-top: 0 !important;
+}
+
+/* Adjust Status Area */
 .card-top-row {
     grid-area: status;
     margin-bottom: 0 !important;
     justify-content: flex-end !important;
-}
-
-.card-steps {
-    grid-area: flow;
-    margin-top: 0.25rem !important;
 }
 
 .project-card:hover {

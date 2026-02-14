@@ -1028,6 +1028,8 @@ body {
     font-size: 0.85rem;
     margin: 0.5rem 0;
     resize: vertical;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .note-edit-actions {
@@ -1170,6 +1172,8 @@ body {
     line-height: 1.5;
     white-space: pre-wrap;
     color: var(--text-check);
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .btn-delete-note {

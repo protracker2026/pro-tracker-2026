@@ -473,34 +473,34 @@ body {
 
 /* Priority Colors (Transparent Style) */
 .priority-normal {
-    background-color: rgba(16, 185, 129, 0.15) !important;
+    background-color: rgba(16, 185, 129, 0.12) !important;
     color: #10b981 !important;
-    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
 }
 
 .priority-urgent {
-    background-color: rgba(249, 115, 22, 0.15) !important;
+    background-color: rgba(249, 115, 22, 0.12) !important;
     color: #f97316 !important;
-    border: 1px solid rgba(249, 115, 22, 0.3) !important;
+    border: 1px solid rgba(249, 115, 22, 0.4) !important;
 }
 
 .priority-very-urgent {
-    background-color: rgba(239, 68, 68, 0.15) !important;
+    background-color: rgba(239, 68, 68, 0.12) !important;
     color: #ef4444 !important;
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
-}
-
-.priority-most-urgent {
-    background: rgba(239, 68, 68, 0.2) !important;
-    color: #ff4d4d !important;
     border: 1px solid rgba(239, 68, 68, 0.4) !important;
 }
 
+.priority-most-urgent {
+    background: rgba(239, 68, 68, 0.15) !important;
+    color: #ff4d4d !important;
+    border: 1px solid rgba(239, 68, 68, 0.5) !important;
+}
+
 .priority-extreme {
-    background: rgba(255, 0, 0, 0.2) !important;
+    background: rgba(255, 0, 0, 0.15) !important;
     color: #ff4d4d !important;
     animation: pulsate 1.5s infinite;
-    border: 1px solid rgba(255, 0, 0, 0.5) !important;
+    border: 1px solid rgba(255, 0, 0, 0.6) !important;
 }
 
 .card-top-row {
@@ -513,28 +513,28 @@ body {
 
 /* Status Colors (Transparent Style) */
 .status-badge {
-    background-color: rgba(234, 179, 8, 0.15) !important;
+    background-color: rgba(234, 179, 8, 0.12) !important;
     color: #eab308 !important;
-    border: 1px solid rgba(234, 179, 8, 0.3) !important;
+    border: 1px solid rgba(234, 179, 8, 0.4) !important;
 }
 
 /* Specific Status Mappings */
 .status-badge.status-active {
-    background-color: rgba(234, 179, 8, 0.15) !important;
+    background-color: rgba(234, 179, 8, 0.12) !important;
     color: #eab308 !important;
-    border: 1px solid rgba(234, 179, 8, 0.3) !important;
+    border: 1px solid rgba(234, 179, 8, 0.4) !important;
 }
 
 .status-badge.status-urgent {
-    background-color: rgba(239, 68, 68, 0.15) !important;
+    background-color: rgba(239, 68, 68, 0.12) !important;
     color: #ef4444 !important;
-    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
 }
 
 .status-badge.status-completed {
-    background-color: rgba(16, 185, 129, 0.15) !important;
+    background-color: rgba(16, 185, 129, 0.12) !important;
     color: #10b981 !important;
-    border: 1px solid rgba(16, 185, 129, 0.3) !important;
+    border: 1px solid rgba(16, 185, 129, 0.4) !important;
 }
 
 .card-steps {

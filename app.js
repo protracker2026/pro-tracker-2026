@@ -732,13 +732,23 @@ class App {
             // Let's use inline styles for distinct colors to avoid confusion with priority
             const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
 
-            let pTypeColor = 'rgba(59, 130, 246, 0.15)'; // Blue (Buy)
+            let pTypeColor = 'rgba(59, 130, 246, 0.12)'; // Blue
             let pTextColor = '#3b82f6';
-            if (p.purchaseType === 'hire') { pTypeColor = 'rgba(168, 85, 247, 0.15)'; pTextColor = '#a855f7'; } // Purple (Hire)
-            if (p.purchaseType === 'rent') { pTypeColor = 'rgba(236, 72, 153, 0.15)'; pTextColor = '#ec4899'; } // Pink (Rent)
+            let pBorderColor = 'rgba(59, 130, 246, 0.4)';
+
+            if (p.purchaseType === 'hire') {
+                pTypeColor = 'rgba(168, 85, 247, 0.12)';
+                pTextColor = '#a855f7';
+                pBorderColor = 'rgba(168, 85, 247, 0.4)';
+            }
+            if (p.purchaseType === 'rent') {
+                pTypeColor = 'rgba(236, 72, 153, 0.12)';
+                pTextColor = '#ec4899';
+                pBorderColor = 'rgba(236, 72, 153, 0.4)';
+            }
 
             const purchaseTypeBadge = `
-                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pTextColor.replace(')', ', 0.3)')}; margin-right: 0.5rem;">
+                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pBorderColor}; margin-right: 0.5rem;">
                     <i class="${pType.icon}"></i> ${pType.label}
                 </span>`;
 
@@ -821,7 +831,22 @@ class App {
         this.loadView('detail');
 
         this.detailTitle.textContent = project.name;
-        this.detailStatus.textContent = project.status === 'completed' ? 'เสร็จสิ้น' : 'กำลังดำเนินการ';
+
+        // Status Logic for Detail View
+        let statusClass = 'status-active';
+        let statusText = 'กำลังดำเนินการ';
+        if (project.status === 'completed') {
+            statusClass = 'status-completed';
+            statusText = 'เสร็จสิ้น';
+        } else if (project.deadline) {
+            const dayDiff = Math.ceil((new Date(project.deadline) - new Date()) / (1000 * 60 * 60 * 24));
+            if (dayDiff < 3 && dayDiff >= 0) {
+                statusClass = 'status-urgent';
+            }
+        }
+        this.detailStatus.textContent = statusText;
+        this.detailStatus.className = `status-badge ${statusClass}`;
+
         this.detailDesc.textContent = project.description || 'ไม่มีรายละเอียด';
         this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });
         this.detailDeadline.textContent = project.deadline ? new Date(project.deadline).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
@@ -830,6 +855,20 @@ class App {
         const priorityCfg = PRIORITY_LABELS[project.priority] || PRIORITY_LABELS['normal'];
         this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
         this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
+
+        // Sync Priority Style to Glassmorphism (same as purchase type logic)
+        const prioColorMap = {
+            'priority-normal': '#10b981',
+            'priority-urgent': '#f97316',
+            'priority-very-urgent': '#ef4444',
+            'priority-most-urgent': '#ff4d4d',
+            'priority-extreme': '#ff4d4d'
+        };
+        const colorPrio = prioColorMap[priorityCfg.class] || '#10b981';
+        this.detailPriority.style.backgroundColor = colorPrio.includes('#') ? colorPrio + '1F' : 'rgba(255,255,255,0.1)'; // 1F is ~12%
+        this.detailPriority.style.color = colorPrio;
+        this.detailPriority.style.border = `1px solid ${colorPrio}${colorPrio.includes('#') ? '66' : ''}`; // 66 is ~40%
+        this.detailPriority.style.backdropFilter = 'blur(4px)';
 
         // Purchase Type - Updated Colors
         const pTypeLabels = {

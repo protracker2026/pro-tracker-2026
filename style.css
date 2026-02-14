@@ -976,36 +976,8 @@ body {
     resize: vertical;
 }
 
-.note-view-controls {
-    display: flex;
-    background: var(--bg-body);
-    padding: 0.2rem;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-}
-
-.btn-note-view {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    padding: 0.35rem 0.6rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-}
-
-.btn-note-view:hover {
-    color: var(--text-main);
-}
-
-.btn-note-view.active {
-    background: var(--primary-color);
-    color: white;
-}
-
 .notes-list {
-    margin-top: 1.5rem;
+    margin-top: 1.25rem;
     transition: all 0.3s ease;
 }
 

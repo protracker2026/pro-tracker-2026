@@ -275,10 +275,12 @@ class App {
         this.inpChecklist = document.getElementById('new-checklist-input');
         this.inpChecklistDeadline = document.getElementById('new-checklist-deadline');
         this.btnAddChecklist = document.getElementById('btn-add-checklist');
-        this.inpNote = document.getElementById('note-input');
-        this.inpNoteDeadline = document.getElementById('note-deadline');
-        this.btnAddNote = document.getElementById('btn-add-note');
-        this.notesList = document.getElementById('notes-list');
+        this.inpTimeline = document.getElementById('timeline-input');
+        this.btnAddTimeline = document.getElementById('btn-add-timeline');
+        this.timelineList = document.getElementById('timeline-list');
+        this.inpPostit = document.getElementById('postit-input');
+        this.btnAddPostit = document.getElementById('btn-add-postit');
+        this.postitsList = document.getElementById('postits-list');
 
         this.statTotal = document.getElementById('stat-total');
         this.statProgress = document.getElementById('stat-progress');
@@ -426,30 +428,23 @@ class App {
             if (e.key === 'Enter') this.addChecklistItem();
         });
 
-        this.btnAddNote.addEventListener('click', () => this.addNote());
-        this.inpNote.addEventListener('keypress', (e) => {
+        this.btnAddTimeline.addEventListener('click', () => this.addTimelineEntry());
+        this.inpTimeline.addEventListener('keypress', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                this.addNote();
+                this.addTimelineEntry();
+            }
+        });
+
+        this.btnAddPostit.addEventListener('click', () => this.addPostit());
+        this.inpPostit.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                this.addPostit();
             }
         });
 
         this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
-
-        // Note View Mode Toggles
-        document.querySelectorAll('.btn-note-view').forEach(btn => {
-            btn.addEventListener('click', () => {
-                const mode = btn.dataset.mode;
-                this.noteViewMode = mode;
-                localStorage.setItem('protracker_note_view', mode);
-
-                // UI Update
-                document.querySelectorAll('.btn-note-view').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-
-                this.renderNotesList();
-            });
-        });
     }
 
     async initAccessCodeSystem() {
@@ -828,12 +823,22 @@ class App {
         // Render Content
         this.stepTitle.textContent = `${index + 1}. ${stepData.title}`;
 
-        // Migrate old string notes to array if needed
+        // Migrate old logic
         if (typeof stepData.notes === 'string') {
             const oldText = stepData.notes;
-            stepData.notes = oldText ? [{ timestamp: new Date().toISOString(), text: oldText }] : [];
+            stepData.notes = oldText ? [{ timestamp: new Date().toISOString(), text: oldText, type: 'timeline' }] : [];
         }
-        this.renderNotesList();
+
+        // Migrate and split existing notes into timeline and postits if they aren't already
+        if (!stepData.timeline) {
+            stepData.timeline = (stepData.notes || []).filter(n => !n.type || n.type === 'timeline');
+        }
+        if (!stepData.postits) {
+            stepData.postits = (stepData.notes || []).filter(n => n.type === 'postit');
+        }
+
+        this.renderTimeline();
+        this.renderPostits();
 
         // Button Logic
         if (stepData.completed) {
@@ -1377,25 +1382,22 @@ class App {
         if (this.modalEditStep) this.modalEditStep.classList.remove('open');
     }
 
-    renderNotesList() {
-        if (!this.notesList) return;
-        this.notesList.innerHTML = '';
-
-        // Sync class with current mode
-        this.notesList.className = `notes-list ${this.noteViewMode}`;
-
-        // Update button active state if needed (e.g. when view changes)
-        document.querySelectorAll('.btn-note-view').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.mode === this.noteViewMode);
-        });
+    renderTimeline() {
+        if (!this.timelineList) return;
+        this.timelineList.innerHTML = '';
 
         const stepData = this.activeProject.steps[this.activeWorkflowStepIndex];
-        const notes = stepData.notes || [];
+        const timeline = stepData.timeline || [];
 
-        // Sort by timestamp (descending - newest first)
-        const sortedNotes = [...notes].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        // Sort by timestamp (descending)
+        const sorted = [...timeline].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-        sortedNotes.forEach((note) => {
+        if (sorted.length === 0) {
+            this.timelineList.innerHTML = '<div style="color:var(--text-muted); font-size: 0.8rem; padding: 1rem; text-align: center;">ไม่มีบันทึกเหตุการณ์</div>';
+            return;
+        }
+
+        sorted.forEach((note) => {
             const div = document.createElement('div');
             div.className = 'note-item';
 
@@ -1404,63 +1406,102 @@ class App {
                 hour: '2-digit', minute: '2-digit'
             });
 
-            let deadlineHtml = '';
-            if (note.deadline) {
-                const dn = new Date(note.deadline);
-                deadlineHtml = `<div class="deadline-badge" style="margin-bottom: 0.5rem;"><i class="fa-solid fa-flag-checkered"></i> กำหนดเป้าหมาย: ${dn.toLocaleString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</div>`;
-            }
-
             div.innerHTML = `
                 <div class="note-timestamp">
                     <span class="info-badge" style="background:none; padding:0;"><i class="fa-regular fa-clock"></i> ${dateStr}</span>
-                    <button class="btn-delete-note" title="ลบบันทึก"><i class="fa-solid fa-trash-can"></i></button>
+                    <button class="btn-delete-timeline" title="ลบ" style="background:none; border:none; color:var(--text-muted); cursor:pointer;"><i class="fa-solid fa-trash-can"></i></button>
                 </div>
-                ${deadlineHtml}
                 <div class="note-content">${note.text}</div>
             `;
 
-            // Delete specific note
-            const delBtn = div.querySelector('.btn-delete-note');
-            delBtn.addEventListener('click', async () => {
-                if (confirm('คุณต้องการลบบันทึกนี้ใช่หรือไม่?')) {
-                    // Find original index because we sorted them
-                    const originalIdx = stepData.notes.findIndex(n => n.timestamp === note.timestamp && n.text === note.text);
-                    if (originalIdx !== -1) {
-                        stepData.notes.splice(originalIdx, 1);
-                        await FirestoreManager.updateProject(this.activeProject);
-                        this.renderNotesList();
-                    }
+            div.querySelector('.btn-delete-timeline').addEventListener('click', async () => {
+                if (confirm('ลบบันทึกเหตุการณ์นี้?')) {
+                    stepData.timeline = stepData.timeline.filter(n => n.timestamp !== note.timestamp);
+                    await FirestoreManager.updateProject(this.activeProject);
+                    this.renderTimeline();
                 }
             });
 
-            this.notesList.appendChild(div);
+            this.timelineList.appendChild(div);
         });
     }
 
-    async addNote() {
+    renderPostits() {
+        if (!this.postitsList) return;
+        this.postitsList.innerHTML = '';
+
+        const stepData = this.activeProject.steps[this.activeWorkflowStepIndex];
+        const postits = stepData.postits || [];
+
+        if (postits.length === 0) {
+            this.postitsList.innerHTML = '<div style="color:var(--text-muted); font-size: 0.8rem; padding: 1rem; text-align: center; grid-column: 1/-1;">ไม่มีแผ่นโน้ต</div>';
+            return;
+        }
+
+        postits.forEach((note, idx) => {
+            const div = document.createElement('div');
+            div.className = 'note-item';
+
+            const dateStr = new Date(note.timestamp).toLocaleString('th-TH', {
+                day: '2-digit', month: '2-digit', year: 'numeric'
+            });
+
+            div.innerHTML = `
+                <div class="note-timestamp">
+                    <span>${dateStr}</span>
+                    <button class="btn-delete-postit" title="ลบ" style="background:none; border:none; color:inherit; cursor:pointer;"><i class="fa-solid fa-times"></i></button>
+                </div>
+                <div class="note-content" style="white-space: pre-wrap;">${note.text}</div>
+            `;
+
+            div.querySelector('.btn-delete-postit').addEventListener('click', async () => {
+                if (confirm('ลบโพสต์อิทนี้?')) {
+                    stepData.postits.splice(idx, 1);
+                    await FirestoreManager.updateProject(this.activeProject);
+                    this.renderPostits();
+                }
+            });
+
+            this.postitsList.appendChild(div);
+        });
+    }
+
+    async addTimelineEntry() {
         if (!this.activeProject) return;
-        const text = this.inpNote.value.trim();
+        const text = this.inpTimeline.value.trim();
         if (!text) return;
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
-        if (!Array.isArray(currentStep.notes)) {
-            // Migration for old data
-            const oldNotes = currentStep.notes;
-            currentStep.notes = (typeof oldNotes === 'string' && oldNotes) ? [{ timestamp: new Date().toISOString(), text: oldNotes }] : [];
-        }
+        if (!currentStep.timeline) currentStep.timeline = [];
 
-        currentStep.notes.unshift({
-            timestamp: new Date().toISOString(),
-            text: text,
-            deadline: this.inpNoteDeadline.value || null
+        currentStep.timeline.push({
+            text,
+            timestamp: new Date().toISOString()
         });
 
         await FirestoreManager.updateProject(this.activeProject);
+        this.inpTimeline.value = '';
+        this.renderTimeline();
+        this.showToast('เพิ่มบันทึกเหตุการณ์แล้ว', 'success');
+    }
 
-        this.inpNote.value = '';
-        // Keep deadline value for efficiency
-        this.renderNotesList();
-        this.showToast('บันทึกเรียบร้อยแล้ว', 'success');
+    async addPostit() {
+        if (!this.activeProject) return;
+        const text = this.inpPostit.value.trim();
+        if (!text) return;
+
+        const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
+        if (!currentStep.postits) currentStep.postits = [];
+
+        currentStep.postits.push({
+            text,
+            timestamp: new Date().toISOString()
+        });
+
+        await FirestoreManager.updateProject(this.activeProject);
+        this.inpPostit.value = '';
+        this.renderPostits();
+        this.showToast('แปะโน้ตเรียบร้อยแล้ว', 'success');
     }
 
     async exportToPDF() {
@@ -1478,26 +1519,35 @@ class App {
             }).join('');
 
             let notesHtml = '';
-            if (Array.isArray(step.notes) && step.notes.length > 0) {
-                // Sort by time for PDF (ascending - oldest first)
-                const sortedNotes = [...step.notes].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-                const notesListHtml = sortedNotes.map(note =>
-                    `<div class="pdf-notes" style="margin-top: 5px; border-left: 2px solid #6366f1; padding-left: 10px; background: #f8fafc; margin-bottom: 5px; border-radius: 0 4px 4px 0;">
-                        <div style="font-size: 0.7rem; color: #64748b; margin-bottom: 2px;">
-                            ${new Date(note.timestamp).toLocaleString('th-TH')}
-                        </div>
-                        <div style="font-size: 0.85rem; white-space: pre-wrap;">${note.text}</div>
-                    </div>`
-                ).join('');
+            const timeline = step.timeline || (Array.isArray(step.notes) ? step.notes.filter(n => !n.type || n.type === 'timeline') : []);
+            const postits = step.postits || (Array.isArray(step.notes) ? step.notes.filter(n => n.type === 'postit') : []);
+
+            if (timeline.length > 0 || postits.length > 0) {
+                let timelineHtml = '';
+                if (timeline.length > 0) {
+                    const sortedT = [...timeline].sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                    timelineHtml = `<div style="margin-bottom: 5px;"><strong style="font-size: 0.8rem; color: #475569;">บันทึกเหตุการณ์:</strong>` + sortedT.map(note =>
+                        `<div class="pdf-notes" style="margin-top: 3px; border-left: 2px solid #6366f1; padding-left: 8px; background: #f8fafc; margin-bottom: 3px;">
+                            <div style="font-size: 0.65rem; color: #64748b;">${new Date(note.timestamp).toLocaleString('th-TH')}</div>
+                            <div style="font-size: 0.8rem;">${note.text}</div>
+                        </div>`
+                    ).join('') + `</div>`;
+                }
+
+                let postitsHtml = '';
+                if (postits.length > 0) {
+                    postitsHtml = `<div style="margin-top: 8px;"><strong style="font-size: 0.8rem; color: #475569;">กระดาษโน้ต:</strong>` + postits.map(note =>
+                        `<div class="pdf-notes" style="background: #fef9c3; border-left: 2px solid #eab308; padding: 5px; margin-top: 3px;">
+                            <div style="font-size: 0.8rem;">${note.text}</div>
+                        </div>`
+                    ).join('') + `</div>`;
+                }
 
                 notesHtml = `
-                    <div style="margin-top: 10px;">
-                        <strong style="font-size: 0.9rem; color: #4f46e5;">บันทึกช่วยจำ:</strong>
-                        ${notesListHtml}
-                    </div>
-                `;
-            } else if (typeof step.notes === 'string' && step.notes) {
-                notesHtml = `<div style="margin-top: 10px;"><strong style="font-size: 0.9rem; color: #4f46e5;">บันทึกช่วยจำ:</strong><div class="pdf-notes">${step.notes}</div></div>`;
+                    <div style="margin-top: 10px; border-top: 1px dashed #e2e8f0; padding-top: 10px;">
+                        ${timelineHtml}
+                        ${postitsHtml}
+                    </div>`;
             }
 
             stepsHtml += `

@@ -205,32 +205,42 @@
                             </ul>
                         </div>
 
-                        <div class="notes-section">
-                            <div
-                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                                <h3 style="margin: 0;"><i class="fa-solid fa-note-sticky"></i> บันทึกช่วยจำ</h3>
-                                <div class="note-view-controls">
-                                    <button class="btn-note-view active" data-mode="timeline" title="แสดงแบบเส้นเวลา">
-                                        <i class="fa-solid fa-timeline"></i>
-                                    </button>
-                                    <button class="btn-note-view" data-mode="grid" title="แสดงแบบโพสต์อิท">
-                                        <i class="fa-solid fa-grip-vertical"></i>
-                                    </button>
-                                </div>
-                            </div>
+                        <!-- Separate Timeline Section -->
+                        <div class="timeline-section" style="margin-top: 2rem;">
+                            <h3 style="color: var(--primary-color); font-size: 1.1rem; margin-bottom: 1rem;">
+                                <i class="fa-solid fa-timeline"></i> บันทึกเหตุการณ์ (Timeline)
+                            </h3>
                             <div class="add-note-box">
-                                <textarea id="note-input" placeholder="พิมพ์บันทึกใหม่ที่นี่..."></textarea>
-                                <div
-                                    style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; gap: 0.5rem;">
-                                    <input type="datetime-local" id="note-deadline" title="กำหนดวันที่เกี่ยวข้อง"
-                                        style="width: auto; padding: 0.4rem; font-size: 0.8rem;">
-                                    <button id="btn-add-note" class="btn btn-primary btn-sm">
-                                        <i class="fa-solid fa-paper-plane"></i> บันทึก
+                                <textarea id="timeline-input" placeholder="พิมพ์เหตุการณ์ที่เกิดขึ้น..."></textarea>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <button id="btn-add-timeline" class="btn btn-primary btn-sm">
+                                        <i class="fa-solid fa-plus"></i> บันทึกเหตุการณ์
                                     </button>
                                 </div>
                             </div>
-                            <div id="notes-list" class="notes-list">
-                                <!-- Notes will be injected here -->
+                            <div id="timeline-list" class="notes-list timeline">
+                                <!-- Timeline entries -->
+                            </div>
+                        </div>
+
+                        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+
+                        <!-- Separate Post-it Section -->
+                        <div class="postits-section">
+                            <h3 style="color: var(--warning); font-size: 1.1rem; margin-bottom: 1rem;">
+                                <i class="fa-solid fa-note-sticky"></i> กระดาษโน้ต (Post-it)
+                            </h3>
+                            <div class="add-note-box">
+                                <textarea id="postit-input" placeholder="พิมพ์บันทึกย่อ / สิ่งที่ต้องจำ..."></textarea>
+                                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <button id="btn-add-postit" class="btn btn-warning btn-sm"
+                                        style="color: white; background-color: #f59e0b;">
+                                        <i class="fa-solid fa-thumbtack"></i> แปะโน้ต
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="postits-list" class="notes-list grid">
+                                <!-- Post-it entries -->
                             </div>
                         </div>
                     </div>

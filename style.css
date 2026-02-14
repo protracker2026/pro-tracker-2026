@@ -352,6 +352,36 @@ body {
     gap: 1.5rem;
 }
 
+.grid-group-header {
+    grid-column: 1 / -1;
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin: 2rem 0 0.5rem 0;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    letter-spacing: 0.02em;
+}
+
+.grid-group-header .group-icon {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--primary-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.grid-group-header:first-child {
+    margin-top: 0;
+}
+
 .project-card {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);

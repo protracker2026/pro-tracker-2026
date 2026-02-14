@@ -757,140 +757,133 @@ class App {
             return;
         }
 
-        filtered.forEach(p => {
-            const card = document.createElement('div');
-            card.className = 'project-card';
+        const methodGroups = [
+            { id: 'e-bidding', label: 'e-bidding', icon: 'fa-solid fa-gavel' },
+            { id: 'specific', label: 'เฉพาะเจาะจง', icon: 'fa-solid fa-bullseye' },
+            { id: 'selection', label: 'คัดเลือก', icon: 'fa-solid fa-users-viewfinder' }
+        ];
 
-            const budgetFormatted = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(p.budget);
-            const completedStepsCount = p.steps.filter(s => s.completed).length;
-            const progress = Math.round((completedStepsCount / p.steps.length) * 100);
+        methodGroups.forEach(group => {
+            const groupProjects = filtered.filter(p => (p.procurementMethod || 'e-bidding') === group.id);
+            if (groupProjects.length === 0) return;
 
-            let statusClass = 'status-active';
-            let statusText = 'กำลังดำเนินการ';
-            if (p.status === 'completed') {
-                statusClass = 'status-completed';
-                statusText = 'เสร็จสิ้น';
-            } else if (p.deadline) {
-                const dayDiff = Math.ceil((new Date(p.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-                if (dayDiff < 3 && dayDiff >= 0) {
-                    statusClass = 'status-urgent';
+            // Render Header
+            const header = document.createElement('div');
+            header.className = 'grid-group-header';
+            header.innerHTML = `<div class="group-icon"><i class="${group.icon}"></i></div> ${group.label}`;
+            this.projectsGrid.appendChild(header);
+
+            // Sort within group: newest first
+            groupProjects.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+            groupProjects.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+
+                const budgetFormatted = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB' }).format(p.budget);
+                const completedStepsCount = p.steps.filter(s => s.completed).length;
+                const progress = Math.round((completedStepsCount / p.steps.length) * 100);
+
+                const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
+
+                // Purchase Type Badge
+                const purchaseTypeLabels = {
+                    'buy': { label: 'ซื้อ', class: 'priority-normal', icon: 'fa-solid fa-cart-shopping' },
+                    'hire': { label: 'จ้าง', class: 'priority-urgent', icon: 'fa-solid fa-briefcase' },
+                    'rent': { label: 'เช่า', class: 'priority-most-urgent', icon: 'fa-solid fa-file-contract' }
+                };
+                const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
+
+                let pTypeColor = 'rgba(59, 130, 246, 0.12)'; // Blue
+                let pTextColor = '#3b82f6';
+                let pBorderColor = 'rgba(59, 130, 246, 0.4)';
+
+                if (p.purchaseType === 'hire') {
+                    pTypeColor = 'rgba(168, 85, 247, 0.12)';
+                    pTextColor = '#a855f7';
+                    pBorderColor = 'rgba(168, 85, 247, 0.4)';
                 }
-            }
+                if (p.purchaseType === 'rent') {
+                    pTypeColor = 'rgba(236, 72, 153, 0.12)';
+                    pTextColor = '#ec4899';
+                    pBorderColor = 'rgba(236, 72, 153, 0.4)';
+                }
 
-            const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
+                const purchaseTypeBadge = `
+                    <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pBorderColor};">
+                        <i class="${pType.icon}"></i> ${pType.label}
+                    </span>`;
 
-            // Purchase Type Badge
-            const purchaseTypeLabels = {
-                'buy': { label: 'ซื้อ', class: 'priority-normal', icon: 'fa-solid fa-cart-shopping' }, // Reuse normal class (green/teal) or custom
-                'hire': { label: 'จ้าง', class: 'priority-urgent', icon: 'fa-solid fa-briefcase' }, // Reuse urgent (orange)
-                'rent': { label: 'เช่า', class: 'priority-most-urgent', icon: 'fa-solid fa-file-contract' } // Reuse most-urgent (red-ish)
-            };
-            // Note: Reuse existing classes for simplicity or add new ones in CSS
-            // Let's use inline styles for distinct colors to avoid confusion with priority
-            const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
+                // Dynamic logic for Latest Completed and Current Focus
+                const lastCompletedIdx = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
+                const maxCompletedIdx = lastCompletedIdx.length > 0 ? Math.max(...lastCompletedIdx) : -1;
 
-            let pTypeColor = 'rgba(59, 130, 246, 0.12)'; // Blue
-            let pTextColor = '#3b82f6';
-            let pBorderColor = 'rgba(59, 130, 246, 0.4)';
+                const firstIncompleteIdx = p.steps.findIndex(s => !s.completed);
+                const currentFocusIdx = firstIncompleteIdx !== -1 ? firstIncompleteIdx : p.steps.length - 1;
 
-            if (p.purchaseType === 'hire') {
-                pTypeColor = 'rgba(168, 85, 247, 0.12)';
-                pTextColor = '#a855f7';
-                pBorderColor = 'rgba(168, 85, 247, 0.4)';
-            }
-            if (p.purchaseType === 'rent') {
-                pTypeColor = 'rgba(236, 72, 153, 0.12)';
-                pTextColor = '#ec4899';
-                pBorderColor = 'rgba(236, 72, 153, 0.4)';
-            }
+                // Build Flow UI
+                let stepFlowHtml = '';
+                if (p.status === 'completed') {
+                    stepFlowHtml = `
+                        <div class="step-flow-container finished">
+                            <div class="flow-item completed">
+                                <i class="fa-solid fa-circle-check"></i>
+                                <span>${p.steps[p.steps.length - 1].title}</span>
+                            </div>
+                            <div class="flow-status-tag">สำเร็จ</div>
+                        </div>`;
+                } else {
+                    const prevTitle = maxCompletedIdx >= 0 ? p.steps[maxCompletedIdx].title : "เริ่มโครงการ";
+                    const nextTitle = p.steps[currentFocusIdx].title;
 
-            const purchaseTypeBadge = `
-                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pBorderColor};">
-                    <i class="${pType.icon}"></i> ${pType.label}
-                </span>`;
+                    stepFlowHtml = `
+                        <div class="step-flow-container">
+                            <div class="flow-item completed">
+                                <i class="${maxCompletedIdx >= 0 ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
+                                <span>${prevTitle}</span>
+                            </div>
+                            <i class="fa-solid fa-arrow-right flow-arrow"></i>
+                            <div class="flow-item next">
+                                <span>${nextTitle}</span>
+                            </div>
+                        </div>`;
+                }
 
-            // Procurement Method Badge
-            const methodLabels = {
-                'e-bidding': { label: 'e-bidding', color: '#10b981', icon: 'fa-solid fa-gavel' },
-                'specific': { label: 'เฉพาะเจาะจง', color: '#f59e0b', icon: 'fa-solid fa-bullseye' },
-                'selection': { label: 'คัดเลือก', color: '#6366f1', icon: 'fa-solid fa-users-viewfinder' }
-            };
-            const pMethod = methodLabels[p.procurementMethod] || methodLabels['e-bidding'];
-            const pMethodBadge = `
-                <span class="priority-badge" style="background: ${pMethod.color}1F; color: ${pMethod.color}; border: 1px solid ${pMethod.color}66;">
-                    <i class="${pMethod.icon}"></i> ${pMethod.label}
-                </span>`;
-
-            // Dynamic logic for Latest Completed and Current Focus
-            const lastCompletedIdx = p.steps.map((s, i) => s.completed ? i : -1).filter(i => i !== -1);
-            const maxCompletedIdx = lastCompletedIdx.length > 0 ? Math.max(...lastCompletedIdx) : -1;
-
-            const firstIncompleteIdx = p.steps.findIndex(s => !s.completed);
-            const currentFocusIdx = firstIncompleteIdx !== -1 ? firstIncompleteIdx : p.steps.length - 1;
-
-            // Build Flow UI
-            let stepFlowHtml = '';
-            if (p.status === 'completed') {
-                stepFlowHtml = `
-                    <div class="step-flow-container finished">
-                        <div class="flow-item completed">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>${p.steps[p.steps.length - 1].title}</span>
+                card.innerHTML = `
+                    <div class="card-top-row">
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            ${purchaseTypeBadge}
                         </div>
-                        <div class="flow-status-tag">สำเร็จ</div>
-                    </div>`;
-            } else {
-                const prevTitle = maxCompletedIdx >= 0 ? p.steps[maxCompletedIdx].title : "เริ่มโครงการ";
-                const nextTitle = p.steps[currentFocusIdx].title;
-
-                stepFlowHtml = `
-                    <div class="step-flow-container">
-                        <div class="flow-item completed">
-                            <i class="${maxCompletedIdx >= 0 ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'}"></i>
-                            <span>${prevTitle}</span>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <span class="priority-badge ${priorityCfg.class}">
+                                <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
+                            </span>
                         </div>
-                        <i class="fa-solid fa-arrow-right flow-arrow"></i>
-                        <div class="flow-item next">
-                            <span>${nextTitle}</span>
+                    </div>
+                    
+                    <div class="card-body">
+                        <h3>${p.name}</h3>
+                        <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                            <span class="info-badge"><i class="fa-regular fa-calendar"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
+                            <span class="info-badge"><i class="fa-solid fa-tag"></i> ${budgetFormatted}</span>
                         </div>
-                    </div>`;
-            }
+                    </div>
 
-            card.innerHTML = `
-                <div class="card-top-row">
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                        ${purchaseTypeBadge}
-                        ${pMethodBadge}
+                    <div class="card-footer">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
+                            <span>ความคืบหน้า</span>
+                            <span style="font-weight: 700; color: var(--text-main)">${progress}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" style="width: ${progress}%"></div>
+                        </div>
+                        ${stepFlowHtml}
                     </div>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <span class="priority-badge ${priorityCfg.class}">
-                            <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="card-body">
-                    <h3>${p.name}</h3>
-                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                        <span class="info-badge"><i class="fa-regular fa-calendar"></i> ${new Date(p.createdAt).toLocaleDateString('th-TH')}</span>
-                        <span class="info-badge"><i class="fa-solid fa-tag"></i> ${budgetFormatted}</span>
-                    </div>
-                </div>
+                `;
 
-                <div class="card-footer">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; font-size: 0.8rem; color: var(--text-muted);">
-                        <span>ความคืบหน้า</span>
-                        <span style="font-weight: 700; color: var(--text-main)">${progress}%</span>
-                    </div>
-                    <div class="progress-bar-container">
-                        <div class="progress-bar" style="width: ${progress}%"></div>
-                    </div>
-                    ${stepFlowHtml}
-                </div>
-            `;
-
-            card.addEventListener('click', () => this.openProjectDetail(p.id));
-            this.projectsGrid.appendChild(card);
+                card.addEventListener('click', () => this.openProjectDetail(p.id));
+                this.projectsGrid.appendChild(card);
+            });
         });
     }
 

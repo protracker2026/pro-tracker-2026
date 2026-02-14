@@ -291,6 +291,12 @@ class App {
         this.btnAddPostit = document.getElementById('btn-add-postit');
         this.postitsList = document.getElementById('postits-list');
 
+        // Collapsible headers & sections
+        this.headerTimeline = document.getElementById('header-timeline');
+        this.headerPostits = document.getElementById('header-postits');
+        this.sectionTimeline = document.getElementById('section-timeline');
+        this.sectionPostits = document.getElementById('section-postits');
+
         this.statTotal = document.getElementById('stat-total');
         this.statProgress = document.getElementById('stat-progress');
         this.statCompleted = document.getElementById('stat-completed');
@@ -476,6 +482,18 @@ class App {
         });
 
         this.btnCompleteStep.addEventListener('click', () => this.toggleStepCompletion());
+
+        // Collapsible Sections
+        if (this.headerTimeline) {
+            this.headerTimeline.addEventListener('click', () => {
+                this.sectionTimeline.classList.toggle('active');
+            });
+        }
+        if (this.headerPostits) {
+            this.headerPostits.addEventListener('click', () => {
+                this.sectionPostits.classList.toggle('active');
+            });
+        }
     }
 
     async initAccessCodeSystem() {
@@ -950,6 +968,10 @@ class App {
 
         // Render Content
         this.stepTitle.textContent = `${index + 1}. ${stepData.title}`;
+
+        // Collapse sections when changing steps
+        if (this.sectionTimeline) this.sectionTimeline.classList.remove('active');
+        if (this.sectionPostits) this.sectionPostits.classList.remove('active');
 
         // Migrate old logic
         if (typeof stepData.notes === 'string') {
@@ -1726,6 +1748,7 @@ class App {
 
         await FirestoreManager.updateProject(this.activeProject);
         this.inpTimeline.value = '';
+        if (this.sectionTimeline) this.sectionTimeline.classList.add('active');
         this.renderTimeline();
         this.showToast('เพิ่มบันทึกเหตุการณ์แล้ว', 'success');
     }
@@ -1745,6 +1768,7 @@ class App {
 
         await FirestoreManager.updateProject(this.activeProject);
         this.inpPostit.value = '';
+        if (this.sectionPostits) this.sectionPostits.classList.add('active');
         this.renderPostits();
         this.showToast('แปะโน้ตเรียบร้อยแล้ว', 'success');
     }

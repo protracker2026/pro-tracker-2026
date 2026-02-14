@@ -988,8 +988,78 @@ body {
 }
 
 .notes-list {
-    margin-top: 1.25rem;
     transition: all 0.3s ease;
+}
+
+/* Collapsible Sections */
+.collapsible-section {
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background-color: rgba(255, 255, 255, 0.01);
+    transition: all 0.3s ease;
+}
+
+.collapsible-header {
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.collapsible-header:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.collapsible-header h3 {
+    font-size: 0.95rem !important;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.toggle-icon {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    transition: transform 0.3s ease;
+}
+
+.collapsible-content {
+    padding: 1.5rem;
+    padding-top: 0.5rem;
+    display: none;
+    border-top: 1px solid var(--border-color);
+    animation: slideDown 0.25s ease-out;
+}
+
+.collapsible-section.active .collapsible-content {
+    display: block;
+}
+
+.collapsible-section.active .toggle-icon {
+    transform: rotate(180deg);
+}
+
+.collapsible-divider {
+    border: 0;
+    height: 0;
+    margin: 1rem 0;
+    border-top: 1px solid transparent;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Timeline View (Default) */

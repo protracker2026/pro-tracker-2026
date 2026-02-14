@@ -215,41 +215,52 @@
                         </div>
 
                         <!-- Separate Timeline Section -->
-                        <div class="timeline-section" style="margin-top: 2rem;">
-                            <h3 style="color: var(--primary-color); font-size: 1.1rem; margin-bottom: 1rem;">
-                                <i class="fa-solid fa-timeline"></i> บันทึกเหตุการณ์ (Timeline)
-                            </h3>
-                            <div class="add-note-box">
-                                <textarea id="timeline-input" placeholder="พิมพ์เหตุการณ์ที่เกิดขึ้น..."></textarea>
-                                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                                    <button id="btn-add-timeline" class="btn btn-primary btn-sm">
-                                        <i class="fa-solid fa-plus"></i> บันทึกเหตุการณ์
-                                    </button>
-                                </div>
+                        <div class="collapsible-section" id="section-timeline">
+                            <div class="collapsible-header" id="header-timeline">
+                                <h3 style="color: var(--primary-color); margin: 0;">
+                                    <i class="fa-solid fa-timeline"></i> บันทึกเหตุการณ์ (Timeline)
+                                </h3>
+                                <i class="fa-solid fa-chevron-down toggle-icon"></i>
                             </div>
-                            <div id="timeline-list" class="notes-list timeline">
-                                <!-- Timeline entries -->
+                            <div class="collapsible-content">
+                                <div class="add-note-box">
+                                    <textarea id="timeline-input" placeholder="พิมพ์เหตุการณ์ที่เกิดขึ้น..."></textarea>
+                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                        <button id="btn-add-timeline" class="btn btn-primary btn-sm">
+                                            <i class="fa-solid fa-plus"></i> บันทึกเหตุการณ์
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="timeline-list" class="notes-list timeline">
+                                    <!-- Timeline entries -->
+                                </div>
                             </div>
                         </div>
 
-                        <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 2rem 0;">
+                        <hr class="collapsible-divider">
 
                         <!-- Separate Post-it Section -->
-                        <div class="postits-section">
-                            <h3 style="color: var(--warning); font-size: 1.1rem; margin-bottom: 1rem;">
-                                <i class="fa-solid fa-note-sticky"></i> กระดาษโน้ต (Post-it)
-                            </h3>
-                            <div class="add-note-box">
-                                <textarea id="postit-input" placeholder="พิมพ์บันทึกย่อ / สิ่งที่ต้องจำ..."></textarea>
-                                <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
-                                    <button id="btn-add-postit" class="btn btn-warning btn-sm"
-                                        style="color: white; background-color: #f59e0b;">
-                                        <i class="fa-solid fa-thumbtack"></i> แปะโน้ต
-                                    </button>
-                                </div>
+                        <div class="collapsible-section" id="section-postits">
+                            <div class="collapsible-header" id="header-postits">
+                                <h3 style="color: var(--warning); margin: 0;">
+                                    <i class="fa-solid fa-note-sticky"></i> กระดาษโน้ต (Post-it)
+                                </h3>
+                                <i class="fa-solid fa-chevron-down toggle-icon"></i>
                             </div>
-                            <div id="postits-list" class="notes-list grid">
-                                <!-- Post-it entries -->
+                            <div class="collapsible-content">
+                                <div class="add-note-box">
+                                    <textarea id="postit-input"
+                                        placeholder="พิมพ์บันทึกย่อ / สิ่งที่ต้องจำ..."></textarea>
+                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                        <button id="btn-add-postit" class="btn btn-warning btn-sm"
+                                            style="color: white; background-color: #f59e0b;">
+                                            <i class="fa-solid fa-thumbtack"></i> แปะโน้ต
+                                        </button>
+                                    </div>
+                                </div>
+                                <div id="postits-list" class="notes-list grid">
+                                    <!-- Post-it entries -->
+                                </div>
                             </div>
                         </div>
                     </div>

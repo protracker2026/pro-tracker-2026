@@ -1019,6 +1019,7 @@ class App {
         this.activeProject.steps.forEach((step, index) => {
             const tab = document.createElement('div');
             tab.className = `step-tab ${index === this.activeProject.currentStepIndex ? 'active' : ''} ${step.completed ? 'completed' : ''}`;
+            tab.style.userSelect = 'none'; // Prevent selection on dblclick
 
             let icon = `<i class="fa-regular fa-circle"></i>`;
             if (step.completed) icon = `<i class="fa-solid fa-circle-check"></i>`;
@@ -1026,8 +1027,14 @@ class App {
             tab.innerHTML = `${icon} <span>${step.title}</span>`;
             tab.addEventListener('click', () => {
                 this.loadWorkflowStep(index);
-                this.toggleStepCompletion();
             });
+
+            tab.addEventListener('dblclick', async (e) => {
+                e.preventDefault();
+                this.activeWorkflowStepIndex = index;
+                await this.handleStepRevert(e);
+            });
+
             this.workflowTabs.appendChild(tab);
         });
     }

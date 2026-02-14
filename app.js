@@ -732,12 +732,13 @@ class App {
             // Let's use inline styles for distinct colors to avoid confusion with priority
             const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
 
-            let pTypeColor = '#3b82f6'; // Blue
-            if (p.purchaseType === 'hire') pTypeColor = '#a855f7'; // Purple (was green)
-            if (p.purchaseType === 'rent') pTypeColor = '#ec4899'; // Pink (was orange)
+            let pTypeColor = 'rgba(59, 130, 246, 0.15)'; // Blue (Buy)
+            let pTextColor = '#3b82f6';
+            if (p.purchaseType === 'hire') { pTypeColor = 'rgba(168, 85, 247, 0.15)'; pTextColor = '#a855f7'; } // Purple (Hire)
+            if (p.purchaseType === 'rent') { pTypeColor = 'rgba(236, 72, 153, 0.15)'; pTextColor = '#ec4899'; } // Pink (Rent)
 
             const purchaseTypeBadge = `
-                <span class="priority-badge" style="background: ${pTypeColor}; color: white; margin-right: 0.5rem;">
+                <span class="priority-badge" style="background: ${pTypeColor}; color: ${pTextColor}; border: 1px solid ${pTextColor.replace(')', ', 0.3)')}; margin-right: 0.5rem;">
                     <i class="${pType.icon}"></i> ${pType.label}
                 </span>`;
 
@@ -840,8 +841,20 @@ class App {
 
         if (this.detailPurchaseType) {
             this.detailPurchaseType.innerHTML = `<i class="${pType.icon}"></i> ${pType.label}`;
-            this.detailPurchaseType.style.backgroundColor = pType.color;
-            this.detailPurchaseType.style.color = 'white';
+
+            // Set Transparent Style
+            const baseColor = pType.color;
+            this.detailPurchaseType.style.backgroundColor = baseColor.replace('rgb', 'rgba').replace(')', ', 0.15)');
+            if (!baseColor.includes('rgba')) {
+                // Pre-defined were hex or name, let's map them to rgba if needed
+                const rgbaMap = { '#3b82f6': 'rgba(59, 130, 246, 0.15)', '#a855f7': 'rgba(168, 85, 247, 0.15)', '#ec4899': 'rgba(236, 72, 153, 0.15)' };
+                this.detailPurchaseType.style.backgroundColor = rgbaMap[baseColor] || 'rgba(255,255,255,0.1)';
+            }
+            this.detailPurchaseType.style.color = baseColor;
+            this.detailPurchaseType.style.border = `1px solid ${baseColor.replace(')', ', 0.3)')}`;
+            if (!baseColor.includes('rgba')) {
+                this.detailPurchaseType.style.borderColor = baseColor + '4D'; // Add Alpha to Hex
+            }
         }
 
         const completedCount = project.steps.filter(s => s.completed).length;

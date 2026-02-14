@@ -471,7 +471,7 @@ body {
     /* Default */
 }
 
-/* Priority Colors (Transparent Style) */
+/* Priority Colors (Transparent Style with Pulse) */
 .priority-normal {
     background-color: rgba(16, 185, 129, 0.12) !important;
     color: #10b981 !important;
@@ -482,25 +482,43 @@ body {
     background-color: rgba(249, 115, 22, 0.12) !important;
     color: #f97316 !important;
     border: 1px solid rgba(249, 115, 22, 0.4) !important;
+    animation: pulse-badge 2s infinite;
 }
 
 .priority-very-urgent {
     background-color: rgba(239, 68, 68, 0.12) !important;
     color: #ef4444 !important;
     border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    animation: pulse-badge 1.2s infinite;
 }
 
 .priority-most-urgent {
     background: rgba(239, 68, 68, 0.15) !important;
     color: #ff4d4d !important;
     border: 1px solid rgba(239, 68, 68, 0.5) !important;
+    animation: pulse-badge 0.8s infinite;
 }
 
 .priority-extreme {
     background: rgba(255, 0, 0, 0.15) !important;
     color: #ff4d4d !important;
-    animation: pulsate 1.5s infinite;
     border: 1px solid rgba(255, 0, 0, 0.6) !important;
+    animation: pulse-badge 0.5s infinite;
+    font-weight: 800;
+}
+
+@keyframes pulse-badge {
+    0% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+
+    100% {
+        opacity: 1;
+    }
 }
 
 .card-top-row {

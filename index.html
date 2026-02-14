@@ -210,9 +210,14 @@
                                 <input type="text" id="new-checklist-input" placeholder="เพิ่มรายการตรวจสอบ...">
                                 <input type="datetime-local" id="new-checklist-deadline" title="กำหนดเสร็จ (Deadline)"
                                     style="width: auto;">
+                                <label class="btn-icon-upload" for="file-checklist" title="แนบไฟล์หรือรูปภาพ">
+                                    <i class="fa-solid fa-paperclip"></i>
+                                </label>
+                                <input type="file" id="file-checklist" hidden multiple>
                                 <button id="btn-add-checklist" class="btn btn-icon"><i
                                         class="fa-solid fa-plus"></i></button>
                             </div>
+                            <div id="checklist-upload-preview" class="upload-preview"></div>
                             <ul id="checklist-items" class="checklist-items">
                                 <!-- Checkbox items here -->
                             </ul>
@@ -229,7 +234,13 @@
                             <div class="collapsible-content">
                                 <div class="add-note-box">
                                     <textarea id="timeline-input" placeholder="พิมพ์เหตุการณ์ที่เกิดขึ้น..."></textarea>
-                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <div id="timeline-upload-preview" class="upload-preview"></div>
+                                    <div
+                                        style="display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                        <label class="btn-icon-upload" for="file-timeline" title="แนบไฟล์หรือรูปภาพ">
+                                            <i class="fa-solid fa-camera"></i>
+                                        </label>
+                                        <input type="file" id="file-timeline" hidden multiple>
                                         <button id="btn-add-timeline" class="btn btn-primary btn-sm">
                                             <i class="fa-solid fa-plus"></i> บันทึกเหตุการณ์
                                         </button>
@@ -255,7 +266,13 @@
                                 <div class="add-note-box">
                                     <textarea id="postit-input"
                                         placeholder="พิมพ์บันทึกย่อ / สิ่งที่ต้องจำ..."></textarea>
-                                    <div style="display: flex; justify-content: flex-end; margin-top: 0.5rem;">
+                                    <div id="postit-upload-preview" class="upload-preview"></div>
+                                    <div
+                                        style="display: flex; justify-content: flex-end; align-items: center; gap: 0.5rem; margin-top: 0.5rem;">
+                                        <label class="btn-icon-upload" for="file-postit" title="แนบไฟล์หรือรูปภาพ">
+                                            <i class="fa-solid fa-image"></i>
+                                        </label>
+                                        <input type="file" id="file-postit" hidden multiple>
                                         <button id="btn-add-postit" class="btn btn-warning btn-sm"
                                             style="color: white; background-color: #f59e0b;">
                                             <i class="fa-solid fa-thumbtack"></i> แปะโน้ต

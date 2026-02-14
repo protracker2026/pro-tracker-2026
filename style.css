@@ -1942,6 +1942,122 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
     padding-left: 10px;
 }
 
+/* File Upload & Attachment Styles */
+.btn-icon-upload {
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-icon-upload:hover {
+    background: rgba(249, 115, 22, 0.1);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.upload-preview {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0.5rem 0;
+}
+
+.preview-item {
+    position: relative;
+    width: 60px;
+    height: 60px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    background: var(--bg-card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.preview-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.preview-item .btn-remove {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 18px;
+    height: 18px;
+    background: var(--danger);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    cursor: pointer;
+    border: 2px solid var(--bg-card);
+}
+
+.attachment-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+}
+
+.attachment-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.25rem 0.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-decoration: none;
+    transition: all 0.2s;
+    max-width: 200px;
+}
+
+.attachment-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: var(--primary-color);
+}
+
+.attachment-item i {
+    font-size: 0.8rem;
+}
+
+.attachment-item span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.photo-attachment {
+    width: 100%;
+    max-width: 300px;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+}
+
+.photo-attachment:hover {
+    opacity: 0.9;
+}
+
 .pdf-checklist li {
     margin-bottom: 5px;
     font-size: 0.9rem;

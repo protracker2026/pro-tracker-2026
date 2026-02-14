@@ -87,8 +87,9 @@ class Project {
 
 // --- Firestore Manager (Replaces LocalStorage) ---
 
-import { db } from './firebase-config.js';
+import { db, storage } from './firebase-config.js';
 import { doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
 class FirestoreManager {
     static get accessCode() {
@@ -213,6 +214,11 @@ class App {
         this.stepsTemplate = JSON.parse(JSON.stringify(STEPS_TEMPLATE)); // Default
         this.noteViewMode = localStorage.getItem('protracker_note_view') || 'timeline';
         this.activeWorkflowStepIndex = 0;
+        this.tempAttachments = {
+            checklist: [],
+            timeline: [],
+            postit: []
+        };
 
         this.initElements();
         this.initEventListeners();
@@ -310,6 +316,7 @@ class App {
         this.statCompleted = document.getElementById('stat-completed');
         this.statUrgent = document.getElementById('stat-urgent');
         this.activityList = document.getElementById('activity-list');
+        this.initFileUploads();
     }
 
     initEventListeners() {
@@ -608,6 +615,111 @@ class App {
     renderCurrentDate() {
         const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
         document.getElementById('current-date').textContent = new Date().toLocaleDateString('th-TH', options);
+    }
+
+    initFileUploads() {
+        const setups = [
+            { id: 'file-checklist', type: 'checklist', previewId: 'checklist-upload-preview' },
+            { id: 'file-timeline', type: 'timeline', previewId: 'timeline-upload-preview' },
+            { id: 'file-postit', type: 'postit', previewId: 'postit-upload-preview' }
+        ];
+
+        setups.forEach(setup => {
+            const input = document.getElementById(setup.id);
+            const preview = document.getElementById(setup.previewId);
+            if (!input || !preview) return;
+
+            input.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (re) => {
+                        const item = {
+                            file: file,
+                            preview: re.target.result,
+                            id: Date.now() + Math.random()
+                        };
+                        this.tempAttachments[setup.type].push(item);
+                        this.renderUploadPreview(setup.type, preview);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                input.value = ''; // Reset for next selection
+            });
+        });
+    }
+
+    renderUploadPreview(type, container) {
+        container.innerHTML = '';
+        this.tempAttachments[type].forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'preview-item';
+
+            if (item.file.type.startsWith('image/')) {
+                div.innerHTML = `<img src="${item.preview}"><div class="btn-remove">x</div>`;
+            } else {
+                div.innerHTML = `<i class="fa-solid fa-file"></i><div class="btn-remove">x</div>`;
+            }
+
+            div.querySelector('.btn-remove').addEventListener('click', () => {
+                this.tempAttachments[type] = this.tempAttachments[type].filter(i => i.id !== item.id);
+                this.renderUploadPreview(type, container);
+            });
+            container.appendChild(div);
+        });
+    }
+
+    async uploadAttachments(type) {
+        const items = this.tempAttachments[type];
+        if (!items || items.length === 0) return [];
+
+        const urls = [];
+        for (const item of items) {
+            try {
+                const fileName = `${Date.now()}_${item.file.name}`;
+                const storageRef = ref(storage, `attachments/${this.activeProject.id}/${fileName}`);
+                const snapshot = await uploadBytes(storageRef, item.file);
+                const url = await getDownloadURL(snapshot.ref);
+                urls.push({
+                    name: item.file.name,
+                    url: url,
+                    type: item.file.type
+                });
+            } catch (err) {
+                console.error("Upload failed:", err);
+            }
+        }
+
+        // Clear temp
+        this.tempAttachments[type] = [];
+        const previewId = `${type}-upload-preview`;
+        const preview = document.getElementById(previewId);
+        if (preview) preview.innerHTML = '';
+
+        return urls;
+    }
+
+    renderAttachments(attachments) {
+        if (!attachments || attachments.length === 0) return '';
+
+        let html = '<div class="attachment-badges">';
+        attachments.forEach(file => {
+            const isImage = file.type?.startsWith('image/');
+            if (isImage) {
+                html += `
+                    <a href="${file.url}" target="_blank">
+                        <img src="${file.url}" class="photo-attachment" alt="${file.name}">
+                    </a>`;
+            } else {
+                html += `
+                    <a href="${file.url}" target="_blank" class="attachment-item" title="${file.name}">
+                        <i class="fa-solid fa-file-lines"></i>
+                        <span>${file.name}</span>
+                    </a>`;
+            }
+        });
+        html += '</div>';
+        return html;
     }
 
     loadView(viewName) {
@@ -1109,6 +1221,7 @@ class App {
             <input type="checkbox" ${item.checked ? 'checked' : ''}>
             <div style="flex: 1; display: flex; flex-direction: column; gap: 0.25rem;">
                 <span class="checklist-text">${item.text}</span>
+                ${this.renderAttachments(item.attachments)}
                 <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
                     <div class="info-badge" title="วันที่เริ่มเพิ่มรายการ">
                         <i class="fa-regular fa-calendar-plus"></i> ${createdAtStr}
@@ -1241,21 +1354,24 @@ class App {
     async addChecklistItem() {
         const text = this.inpChecklist.value.trim();
         const deadline = this.inpChecklistDeadline.value;
-        if (!text) return;
+        if (!text && this.tempAttachments.checklist.length === 0) return;
+
+        // Upload attachments first
+        const attachments = await this.uploadAttachments('checklist');
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         currentStep.checklist.push({
-            text: text,
+            text: text || (attachments.length > 0 ? attachments[0].name : 'แนบไฟล์'),
             checked: false,
             createdAt: new Date().toISOString(),
             completedAt: null,
-            deadline: deadline || null
+            deadline: deadline || null,
+            attachments: attachments
         });
 
         await FirestoreManager.updateProject(this.activeProject);
 
         this.inpChecklist.value = '';
-        // Keep deadline value for efficiency
         this.loadWorkflowStep(this.activeWorkflowStepIndex);
     }
 
@@ -1653,6 +1769,7 @@ class App {
                     </div>
                 </div>
                 <div class="note-content-display">${note.text}</div>
+                ${this.renderAttachments(note.attachments)}
                 <div class="note-edit-box" style="display:none;">
                     <textarea class="note-edit-area">${note.text}</textarea>
                     <div class="note-edit-actions">
@@ -1732,6 +1849,7 @@ class App {
                     </div>
                 </div>
                 <div class="note-content-display" style="white-space: pre-wrap;">${note.text}</div>
+                ${this.renderAttachments(note.attachments)}
                 <div class="note-edit-box" style="display:none;">
                     <textarea class="note-edit-area" style="height:80%;">${note.text}</textarea>
                     <div class="note-edit-actions">
@@ -1784,16 +1902,18 @@ class App {
     }
 
     async addTimelineEntry() {
-        if (!this.activeProject) return;
         const text = this.inpTimeline.value.trim();
-        if (!text) return;
+        if (!text && this.tempAttachments.timeline.length === 0) return;
+
+        const attachments = await this.uploadAttachments('timeline');
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.timeline) currentStep.timeline = [];
 
         currentStep.timeline.push({
-            text,
-            timestamp: new Date().toISOString()
+            text: text || (attachments.length > 0 ? attachments[0].name : 'แนบรูปถ่าย'),
+            timestamp: new Date().toISOString(),
+            attachments: attachments
         });
 
         await FirestoreManager.updateProject(this.activeProject);
@@ -1804,16 +1924,18 @@ class App {
     }
 
     async addPostit() {
-        if (!this.activeProject) return;
         const text = this.inpPostit.value.trim();
-        if (!text) return;
+        if (!text && this.tempAttachments.postit.length === 0) return;
+
+        const attachments = await this.uploadAttachments('postit');
 
         const currentStep = this.activeProject.steps[this.activeWorkflowStepIndex];
         if (!currentStep.postits) currentStep.postits = [];
 
         currentStep.postits.push({
-            text,
-            timestamp: new Date().toISOString()
+            text: text || (attachments.length > 0 ? attachments[0].name : 'บันทึกรูปภาพ'),
+            timestamp: new Date().toISOString(),
+            attachments: attachments
         });
 
         await FirestoreManager.updateProject(this.activeProject);

@@ -495,6 +495,34 @@
         </div>
     </div>
 
+    <!-- Modal for Step Completion -->
+    <div id="modal-step-complete" class="modal" style="z-index: 1100;">
+        <div class="modal-content" style="max-width: 450px;">
+            <div class="modal-header">
+                <h2><i class="fa-regular fa-circle-check" style="color: var(--primary);"></i> บันทึกขั้นตอนเสร็จสิ้น
+                </h2>
+                <span class="close-modal">&times;</span>
+            </div>
+            <div class="modal-body">
+                <p id="step-complete-label" style="color: var(--text-muted); margin-bottom: 1rem;"></p>
+                <div class="form-group">
+                    <label>เลขหนังสือ (ถ้ามี)</label>
+                    <input type="text" id="inp-step-doc-number" placeholder="เช่น ศธ 0001/001">
+                </div>
+                <div class="form-group">
+                    <label>วันที่ดำเนินการเสร็จ</label>
+                    <input type="date" id="inp-step-complete-date">
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-text close-modal">ยกเลิก</button>
+                    <button type="button" class="btn btn-primary" id="btn-confirm-step-complete">
+                        <i class="fa-solid fa-check"></i> ยืนยันเสร็จสิ้น
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="toast-container"></div>
     <script type="module" src="app.js"></script>
 </body>

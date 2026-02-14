@@ -1045,6 +1045,22 @@ class App {
             this.btnCompleteStep.innerHTML = '<i class="fa-solid fa-rotate-left"></i> ย้อนกลับสถานะ';
             this.btnCompleteStep.classList.remove('btn-primary');
             this.btnCompleteStep.classList.add('btn-outline');
+
+            // Show completion info
+            let infoEl = document.getElementById('step-completion-info');
+            if (!infoEl) {
+                infoEl = document.createElement('div');
+                infoEl.id = 'step-completion-info';
+                this.btnCompleteStep.parentNode.insertBefore(infoEl, this.btnCompleteStep.nextSibling);
+            }
+            const dateStr = stepData.completedAt ? new Date(stepData.completedAt).toLocaleDateString('th-TH') : '-';
+            const docNum = stepData.documentNumber || '-';
+            infoEl.innerHTML = `
+                <div style="margin-top: 10px; padding: 10px 14px; background: rgba(16,185,129,0.1); border-left: 3px solid #10b981; border-radius: 6px; font-size: 0.85rem; color: var(--text-secondary);">
+                    <div><i class="fa-solid fa-circle-check" style="color: #10b981;"></i> เสร็จสิ้นเมื่อ: <strong>${dateStr}</strong></div>
+                    <div style="margin-top: 4px;"><i class="fa-solid fa-file-lines" style="color: #6366f1;"></i> เลขหนังสือ: <strong>${docNum}</strong></div>
+                </div>
+            `;
         } else {
             this.btnCompleteStep.innerHTML = '<i class="fa-regular fa-circle-check"></i> ทำขั้นตอนเสร็จสิ้น';
             this.btnCompleteStep.classList.add('btn-outline'); // Standard outline
@@ -1053,6 +1069,9 @@ class App {
                 this.btnCompleteStep.classList.add('btn-primary');
                 this.btnCompleteStep.classList.remove('btn-outline');
             }
+            // Remove completion info if reverting
+            const infoEl = document.getElementById('step-completion-info');
+            if (infoEl) infoEl.remove();
         }
 
         // Render Checklist
@@ -1265,16 +1284,47 @@ class App {
         const stepIndex = this.activeWorkflowStepIndex;
         const step = this.activeProject.steps[stepIndex];
 
-        step.completed = !step.completed;
-
         if (step.completed) {
-            step.completedAt = new Date().toISOString();
-            this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
-        } else {
+            // --- Reverting: no popup needed ---
+            step.completed = false;
             step.completedAt = null;
+            step.documentNumber = null;
             this.showToast(`ยกเลิกสถานะเสร็จสิ้น ขั้นตอนที่ ${stepIndex + 1}`, 'info');
-        }
+            await this._saveAndRefreshStep(stepIndex);
+        } else {
+            // --- Completing: show popup ---
+            const modal = document.getElementById('modal-step-complete');
+            const label = document.getElementById('step-complete-label');
+            const inpDocNumber = document.getElementById('inp-step-doc-number');
+            const inpDate = document.getElementById('inp-step-complete-date');
+            const btnConfirm = document.getElementById('btn-confirm-step-complete');
 
+            label.textContent = `ขั้นตอนที่ ${stepIndex + 1}: ${step.title}`;
+            inpDocNumber.value = step.documentNumber || '';
+            inpDate.value = new Date().toISOString().split('T')[0]; // Default to today
+            modal.classList.add('open');
+
+            // Remove any previous listener
+            const newBtn = btnConfirm.cloneNode(true);
+            btnConfirm.parentNode.replaceChild(newBtn, btnConfirm);
+
+            newBtn.addEventListener('click', async () => {
+                step.completed = true;
+                step.documentNumber = inpDocNumber.value.trim() || null;
+
+                const selectedDate = inpDate.value;
+                step.completedAt = selectedDate
+                    ? new Date(selectedDate).toISOString()
+                    : new Date().toISOString();
+
+                modal.classList.remove('open');
+                this.showToast(`บันทึกขั้นตอนที่ ${stepIndex + 1} เสร็จสิ้น`, 'success');
+                await this._saveAndRefreshStep(stepIndex);
+            });
+        }
+    }
+
+    async _saveAndRefreshStep(stepIndex) {
         // Recalculate current pointer: first incomplete step
         const firstIncompleteIdx = this.activeProject.steps.findIndex(s => !s.completed);
         if (firstIncompleteIdx !== -1) {
@@ -1300,6 +1350,7 @@ class App {
         this.detailProgressPercent.textContent = `${percent}%`;
 
         // Celebration if 100% and it was just completed
+        const step = this.activeProject.steps[stepIndex];
         if (percent === 100 && step.completed) {
             this.triggerCelebration();
         }
@@ -1900,6 +1951,11 @@ class App {
                         <span style="color: ${statusColor}; font-size: 12px;">${statusText}</span>
                     </div>
                 `;
+
+                // Document Number
+                if (step.completed && step.documentNumber) {
+                    html += `<div style="margin-left: 14px; margin-bottom: 6px; font-size: 13px; color: #475569;"><i>เลขหนังสือ: ${this.escapeHtml(step.documentNumber)}</i></div>`;
+                }
 
                 // Checklist
                 if (step.checklist && step.checklist.length > 0) {

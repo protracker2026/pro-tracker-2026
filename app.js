@@ -1425,7 +1425,7 @@ class App {
 
             // Set dates via Flatpickr
             let docDateStr = this._formatDDMMYYYY(new Date());
-            let completeDateStr = this._formatDDMMYYYY(new Date());
+            let completeDateStr = '';
 
             if (mode === 'edit') {
                 const fullDocNum = step.documentNumber || '';
@@ -1446,7 +1446,12 @@ class App {
             }
 
             inpDocDate._flatpickr.setDate(this._parseDDMMYYYY(docDateStr) || new Date());
-            inpDate._flatpickr.setDate(this._parseDDMMYYYY(completeDateStr) || new Date());
+
+            if (completeDateStr) {
+                inpDate._flatpickr.setDate(this._parseDDMMYYYY(completeDateStr));
+            } else {
+                inpDate._flatpickr.clear();
+            }
 
             modal.classList.add('open');
 

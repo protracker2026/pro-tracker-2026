@@ -794,7 +794,6 @@ class App {
                         <span class="priority-badge ${priorityCfg.class}">
                             <i class="${priorityCfg.icon}"></i> ${priorityCfg.label}
                         </span>
-                        <span class="status-badge ${statusClass}">${statusText}</span>
                     </div>
                 </div>
                 

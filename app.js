@@ -732,9 +732,9 @@ class App {
             // Let's use inline styles for distinct colors to avoid confusion with priority
             const pType = p.purchaseType ? (purchaseTypeLabels[p.purchaseType] || purchaseTypeLabels['buy']) : purchaseTypeLabels['buy'];
 
-            let pTypeColor = '#3b82f6'; // Blue for Buy
-            if (p.purchaseType === 'hire') pTypeColor = '#10b981'; // Green for Hire
-            if (p.purchaseType === 'rent') pTypeColor = '#f59e0b'; // Orange for Rent
+            let pTypeColor = '#3b82f6'; // Blue
+            if (p.purchaseType === 'hire') pTypeColor = '#a855f7'; // Purple (was green)
+            if (p.purchaseType === 'rent') pTypeColor = '#ec4899'; // Pink (was orange)
 
             const purchaseTypeBadge = `
                 <span class="priority-badge" style="background: ${pTypeColor}; color: white; margin-right: 0.5rem;">
@@ -830,11 +830,11 @@ class App {
         this.detailPriority.innerHTML = `<i class="${priorityCfg.icon}"></i> ${priorityCfg.label}`;
         this.detailPriority.className = `priority-badge ${priorityCfg.class}`;
 
-        // Purchase Type
+        // Purchase Type - Updated Colors
         const pTypeLabels = {
-            'buy': { label: 'ซื้อ', color: '#3b82f6', icon: 'fa-solid fa-cart-shopping' },
-            'hire': { label: 'จ้าง', color: '#10b981', icon: 'fa-solid fa-briefcase' },
-            'rent': { label: 'เช่า', color: '#f59e0b', icon: 'fa-solid fa-file-contract' }
+            'buy': { label: 'ซื้อ', color: '#3b82f6', icon: 'fa-solid fa-cart-shopping' }, // Blue
+            'hire': { label: 'จ้าง', color: '#a855f7', icon: 'fa-solid fa-briefcase' }, // Purple
+            'rent': { label: 'เช่า', color: '#ec4899', icon: 'fa-solid fa-file-contract' } // Pink
         };
         const pType = project.purchaseType ? (pTypeLabels[project.purchaseType] || pTypeLabels['buy']) : pTypeLabels['buy'];
 

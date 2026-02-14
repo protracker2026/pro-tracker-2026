@@ -928,11 +928,8 @@ class App {
 
             tab.innerHTML = `${icon} <span>${step.title}</span>`;
             tab.addEventListener('click', () => {
-                if (this.activeWorkflowStepIndex === index) {
-                    this.toggleStepCompletion();
-                } else {
-                    this.loadWorkflowStep(index);
-                }
+                this.loadWorkflowStep(index);
+                this.toggleStepCompletion();
             });
             this.workflowTabs.appendChild(tab);
         });

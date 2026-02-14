@@ -831,13 +831,22 @@ body {
 
 .add-checklist-item input {
     flex: 1;
-    background-color: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border-color);
-    padding: 0.45rem 0.75rem;
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.5rem 0.85rem;
     border-radius: 6px;
     color: var(--text-main);
-    font-size: 0.85rem;
+    font-size: 0.9rem;
     transition: all 0.2s;
+}
+
+.add-checklist-item input:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.add-checklist-item input::placeholder {
+    color: rgba(255, 255, 255, 0.3);
 }
 
 .add-checklist-item input:focus {
@@ -1043,13 +1052,26 @@ body {
 .add-note-box textarea {
     width: 100%;
     min-height: 80px;
-    background-color: var(--bg-body);
-    border: 1px solid var(--border-color);
+    background-color: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.15);
     border-radius: var(--radius-sm);
     padding: 0.75rem;
     color: var(--text-main);
+    font-size: 0.9rem;
     font-family: inherit;
     resize: vertical;
+    transition: all 0.2s;
+}
+
+.add-note-box textarea:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.add-note-box textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: rgba(0, 0, 0, 0.2);
 }
 
 .notes-list {

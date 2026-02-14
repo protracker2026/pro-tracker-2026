@@ -708,18 +708,6 @@ class App {
             const completedStepsCount = p.steps.filter(s => s.completed).length;
             const progress = Math.round((completedStepsCount / p.steps.length) * 100);
 
-            let statusClass = 'status-active';
-            let statusText = 'กำลังดำเนินการ';
-            if (p.status === 'completed') {
-                statusClass = 'status-completed';
-                statusText = 'เสร็จสิ้น';
-            } else if (p.deadline) {
-                const dayDiff = Math.ceil((new Date(p.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-                if (dayDiff < 3 && dayDiff >= 0) {
-                    statusClass = 'status-urgent';
-                }
-            }
-
             const priorityCfg = PRIORITY_LABELS[p.priority] || PRIORITY_LABELS['normal'];
 
             // Purchase Type Badge
@@ -831,21 +819,6 @@ class App {
         this.loadView('detail');
 
         this.detailTitle.textContent = project.name;
-
-        // Status Logic for Detail View
-        let statusClass = 'status-active';
-        let statusText = 'กำลังดำเนินการ';
-        if (project.status === 'completed') {
-            statusClass = 'status-completed';
-            statusText = 'เสร็จสิ้น';
-        } else if (project.deadline) {
-            const dayDiff = Math.ceil((new Date(project.deadline) - new Date()) / (1000 * 60 * 60 * 24));
-            if (dayDiff < 3 && dayDiff >= 0) {
-                statusClass = 'status-urgent';
-            }
-        }
-        this.detailStatus.textContent = statusText;
-        this.detailStatus.className = `status-badge ${statusClass}`;
 
         this.detailDesc.textContent = project.description || 'ไม่มีรายละเอียด';
         this.detailStartDate.textContent = new Date(project.createdAt).toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' });

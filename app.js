@@ -1330,12 +1330,25 @@ class App {
 
             label.textContent = `ขั้นตอนที่ ${stepIndex + 1}: ${step.title}`;
 
+            // Initialize Flatpickr if not already attached
+            const fpConfig = {
+                dateFormat: "d/m/Y",
+                locale: "th",
+                allowInput: true
+            };
+
+            if (!inpDocDate._flatpickr) flatpickr(inpDocDate, fpConfig);
+            if (!inpDate._flatpickr) flatpickr(inpDate, fpConfig);
+
             // Load saved prefix from project, or empty
-            const todayStr = this._formatDDMMYYYY(new Date());
+            const today = new Date();
             inpPrefix.value = this.activeProject.docNumberPrefix || '';
             inpSuffix.value = '';
-            inpDocDate.value = todayStr;
-            inpDate.value = todayStr;
+
+            // Set dates via Flatpickr
+            inpDocDate._flatpickr.setDate(today);
+            inpDate._flatpickr.setDate(today);
+
             modal.classList.add('open');
 
             // Auto-focus suffix if prefix already set

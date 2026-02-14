@@ -56,8 +56,12 @@
         <main class="main-content">
             <!-- Header -->
             <header class="top-bar">
-                <div class="page-title">
-                    <h2 id="page-header-title">ภาพรวม</h2>
+                <div class="page-title" style="display: flex; align-items: center; gap: 15px;">
+                    <button id="sidebar-toggle" class="btn-icon"
+                        style="color: var(--text-muted); font-size: 1.2rem; cursor: pointer; background: none; border: none;">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h2 id="page-header-title" style="margin: 0;">ภาพรวม</h2>
                     <span id="current-date" class="date-display">Today</span>
                 </div>
                 <div class="user-profile">

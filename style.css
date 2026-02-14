@@ -75,6 +75,18 @@ body {
     flex-direction: column;
     padding: 1.5rem;
     flex-shrink: 0;
+    transition: all 0.3s ease-in-out;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.sidebar.collapsed {
+    width: 0;
+    padding: 1.5rem 0;
+    /* Keep vertical padding but remove horizontal */
+    border: none;
+    opacity: 0;
+    pointer-events: none;
 }
 
 .brand {

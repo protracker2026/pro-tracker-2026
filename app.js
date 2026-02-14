@@ -375,6 +375,20 @@ class App {
             this.activeProject = null;
         });
 
+        // Sidebar Toggle Logic
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebarToggle && sidebar) {
+            sidebarToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('collapsed');
+            });
+
+            // Auto-collapse on mobile initially
+            if (window.innerWidth <= 1024) {
+                sidebar.classList.add('collapsed');
+            }
+        }
+
         this.btnDeleteProject.addEventListener('click', async () => {
             if (confirm('คุณแน่ใจหรือไม่ที่จะลบโครงการนี้?')) {
                 await FirestoreManager.deleteProject(this.activeProject.id);
